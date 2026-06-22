@@ -5,16 +5,14 @@ import Login from './components/Login';
 import Catalog from './components/Catalog';
 import Cart from './components/Cart';
 import Orders from './components/Orders';
-import { PRODUCTS } from './data/products';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
-  
+
   const [activeTab, setActiveTab] = useState('catalog');
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('all');
   const [page, setPage] = useState(1);
   
   const [cart, setCart] = useState({});
@@ -66,35 +64,30 @@ export default function App() {
     setUser(null);
     setCart({});
     setOrders([]);
-    setCategory('all');
     setSearch('');
     setPage(1);
     setOrderSuccessToken('');
   };
 
-  // Add to cart with stock validations
-  const handleAddToCart = (id) => {
-    const p = PRODUCTS.find((x) => x.id === id);
-    if (!p || p.stock === 0) return;
+  // Add to cart - recibe el producto real (del BFF), no un id de array estatico
+  const handleAddToCart = (product) => {
+    if (!product || product.inStock === false) return;
     setCart((prevCart) => {
-      const existing = prevCart[id];
+      const existing = prevCart[product.id];
       const currentQty = existing ? existing.qty : 0;
-      if (currentQty >= p.stock) return prevCart;
       return {
         ...prevCart,
-        [id]: { product: p, qty: currentQty + 1 }
+        [product.id]: { product, qty: currentQty + 1 }
       };
     });
   };
 
-  // Modify cart item qty
+  // Modify cart item qty - usa el producto ya guardado en el carro, no busca en ningun array
   const handleChangeQty = (id, delta) => {
-    const p = PRODUCTS.find((x) => x.id === id);
-    if (!p) return;
     setCart((prevCart) => {
       const existing = prevCart[id];
       if (!existing) return prevCart;
-      const newQty = Math.max(0, Math.min(p.stock, existing.qty + delta));
+      const newQty = Math.max(0, existing.qty + delta);
       if (newQty === 0) {
         const nextCart = { ...prevCart };
         delete nextCart[id];
@@ -148,11 +141,6 @@ export default function App() {
   };
 
   // Filter state adjustments
-  const handleCategoryChange = (catName) => {
-    setCategory(catName);
-    setPage(1);
-  };
-
   const handleSearchChange = (query) => {
     setSearch(query);
     setPage(1);
@@ -186,8 +174,6 @@ export default function App() {
             {activeTab === 'catalog' && (
               <Catalog
                 search={search}
-                category={category}
-                onCategoryChange={handleCategoryChange}
                 cart={cart}
                 onAddToCart={handleAddToCart}
                 page={page}

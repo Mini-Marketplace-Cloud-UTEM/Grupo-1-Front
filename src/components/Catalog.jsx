@@ -1,126 +1,126 @@
-import React from 'react';
-import { PRODUCTS, PAGE_SIZE } from '../data/products';
+import React, { useEffect, useState } from 'react';
+import { fetchProducts } from '../api';
 
-export default function Catalog({
-  search,
-  category,
-  onCategoryChange,
-  cart,
-  onAddToCart,
-  page,
-  onPageChange
-}) {
-  // Format price utility
+export default function Catalog({ search, cart, onAddToCart, page, onPageChange }) {
+  const [products, setProducts] = useState([]);
+  const [pagination, setPagination] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const fmt = (n) => '$' + n.toLocaleString('es-CL');
 
-  // Filter products
-  const filtered = PRODUCTS.filter((p) => {
-    const catOk = category === 'all' || p.cat === category;
-    const searchOk =
-      !search ||
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.cat.toLowerCase().includes(search.toLowerCase());
-    return catOk && searchOk;
-  });
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
 
-  const total = filtered.length;
-  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  
-  // Safe page guard
-  const currentPage = page > pages ? 1 : page;
-  const slice = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+    fetchProducts({ q: search, page, pageSize: 6 })
+      .then((data) => {
+        if (cancelled) return;
+        setProducts(data.data);
+        setPagination(data.pagination);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [search, page]);
+
+  if (loading) {
+    return (
+      <div className="page" id="page-catalog">
+        <p>Cargando productos desde el BFF...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page" id="page-catalog">
+        <p style={{ color: 'crimson' }}>Error al conectar con el BFF: {error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="page" id="page-catalog">
       <div className="catalog-toolbar">
-        <div className="filter-chips">
-          {['all', 'Electrónica', 'Hogar', 'Oficina'].map((catName) => (
-            <div
-              key={catName}
-              className={`chip ${category === catName ? 'active' : ''}`}
-              onClick={() => onCategoryChange(catName)}
-            >
-              {catName === 'all' ? 'Todos' : catName}
-            </div>
-          ))}
-        </div>
         <span id="result-count">
-          {total} producto{total !== 1 ? 's' : ''}
+          {pagination.total} producto{pagination.total !== 1 ? 's' : ''} (vía {`/v1/products`} del BFF)
         </span>
       </div>
 
       <div className="product-grid" id="product-grid">
-        {slice.map((p) => {
+        {products.map((p) => {
           const inCart = cart[p.id]?.qty || 0;
-          
-          let stockBadge;
-          if (p.stock === 0) {
-            stockBadge = <span className="stock-badge stock-out">Sin stock</span>;
-          } else if (p.stock <= 3) {
-            stockBadge = <span className="stock-badge stock-low">Últimas {p.stock}</span>;
-          } else {
-            stockBadge = <span className="stock-badge stock-ok">Disponible</span>;
-          }
-
-          let addBtn;
-          if (p.stock === 0) {
-            addBtn = (
-              <button className="btn btn-sm" style={{ width: '100%', opacity: 0.5 }} disabled>
-                Sin stock
-              </button>
-            );
-          } else if (inCart > 0) {
-            addBtn = (
-              <button className="btn btn-sm btn-primary" style={{ width: '100%' }} onClick={() => onAddToCart(p.id)}>
-                <i className="ti ti-circle-check" aria-hidden="true" style={{ marginRight: '4px' }}></i> En carrito ({inCart})
-              </button>
-            );
-          } else {
-            addBtn = (
-              <button className="btn btn-sm btn-primary" style={{ width: '100%' }} onClick={() => onAddToCart(p.id)}>
-                Agregar
-              </button>
-            );
-          }
 
           return (
             <div key={p.id} className="product-card">
               <div className="product-img" style={{ background: 'var(--color-background-secondary)' }}>
-                {p.icon}
+                {p.imageUrl ? (
+                  <img src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  '📦'
+                )}
               </div>
               <p className="product-name">{p.name}</p>
-              <p className="product-cat">{p.cat}</p>
+              <p className="product-cat">{p.category}</p>
               <p className="product-price">{fmt(p.price)}</p>
-              {stockBadge}
-              <div style={{ marginTop: '8px' }}>{addBtn}</div>
+              {p.inStock ? (
+                <span className="stock-badge stock-ok">Disponible</span>
+              ) : (
+                <span className="stock-badge stock-out">Sin stock</span>
+              )}
+              <div style={{ marginTop: '8px' }}>
+                {!p.inStock ? (
+                  <button className="btn btn-sm" style={{ width: '100%', opacity: 0.5 }} disabled>
+                    Sin stock
+                  </button>
+                ) : (
+                  <button
+                    className="btn btn-sm btn-primary"
+                    style={{ width: '100%' }}
+                    onClick={() => onAddToCart(p)}
+                  >
+                    {inCart > 0 ? `En carrito (${inCart})` : 'Agregar'}
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}
       </div>
 
-      {pages > 1 && (
+      {pagination.totalPages > 1 && (
         <div className="pagination" id="pagination">
-          {currentPage > 1 && (
-            <div className="page-btn" onClick={() => onPageChange(currentPage - 1)}>
+          {pagination.hasPrev && (
+            <div className="page-btn" onClick={() => onPageChange(page - 1)}>
               <i className="ti ti-chevron-left" aria-hidden="true"></i>
             </div>
           )}
-          {Array.from({ length: pages }, (_, i) => i + 1).map((n) => (
+          {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((n) => (
             <div
               key={n}
-              className={`page-btn ${n === currentPage ? 'active' : ''}`}
+              className={`page-btn ${n === page ? 'active' : ''}`}
               onClick={() => onPageChange(n)}
             >
               {n}
             </div>
           ))}
-          {currentPage < pages && (
-            <div className="page-btn" onClick={() => onPageChange(currentPage + 1)}>
+          {pagination.hasNext && (
+            <div className="page-btn" onClick={() => onPageChange(page + 1)}>
               <i className="ti ti-chevron-right" aria-hidden="true"></i>
             </div>
           )}
           <span className="page-info">
-            Página {currentPage} de {pages}
+            Página {pagination.page} de {pagination.totalPages}
           </span>
         </div>
       )}
