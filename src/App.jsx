@@ -5,27 +5,43 @@ import Login from './components/Login';
 import Catalog from './components/Catalog';
 import Cart from './components/Cart';
 import Orders from './components/Orders';
+import Footer from './components/Footer';
+
+import { useAuth } from './adapters/hooks/useAuth.js';
+import { useCart } from './adapters/hooks/useCart.js';
 
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [token, setToken] = useState(null);
-  const [user, setUser] = useState(null);
+  const {
+    isLoggedIn,
+    user,
+    login,
+    logout,
+    setAuthenticatedUser
+  } = useAuth();
 
   const [activeTab, setActiveTab] = useState('catalog');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  
-  const [cart, setCart] = useState({});
-  const [orders, setOrders] = useState([]);
-  const [orderSuccessToken, setOrderSuccessToken] = useState('');
+
+  const {
+    cartState,
+    cartCount,
+    orders,
+    orderSuccessToken,
+    addToCart,
+    changeQty,
+    removeItem,
+    clearCart,
+    placeOrder,
+    seedOrders,
+    clearOrders
+  } = useCart();
 
   // Handle Login success
   const handleLoginSuccess = (userName, jwtToken) => {
-    setUser(userName);
-    setToken(jwtToken);
-    setIsLoggedIn(true);
-    // Seed orders
-    setOrders([
+    setAuthenticatedUser(userName, jwtToken);
+    // Semillar órdenes al iniciar sesión
+    seedOrders([
       {
         id: 'ORD-A4F2B1',
         date: '10/06/2026',
@@ -59,94 +75,18 @@ export default function App() {
 
   // Handle Logout
   const handleLogout = () => {
-    setIsLoggedIn(false);
-    setToken(null);
-    setUser(null);
-    setCart({});
-    setOrders([]);
+    logout();
+    clearCart();
+    clearOrders();
     setSearch('');
     setPage(1);
-    setOrderSuccessToken('');
   };
 
-  // Add to cart - recibe el producto real (del BFF), no un id de array estatico
-  const handleAddToCart = (product) => {
-    if (!product || product.inStock === false) return;
-    setCart((prevCart) => {
-      const existing = prevCart[product.id];
-      const currentQty = existing ? existing.qty : 0;
-      return {
-        ...prevCart,
-        [product.id]: { product, qty: currentQty + 1 }
-      };
-    });
-  };
-
-  // Modify cart item qty - usa el producto ya guardado en el carro, no busca en ningun array
-  const handleChangeQty = (id, delta) => {
-    setCart((prevCart) => {
-      const existing = prevCart[id];
-      if (!existing) return prevCart;
-      const newQty = Math.max(0, existing.qty + delta);
-      if (newQty === 0) {
-        const nextCart = { ...prevCart };
-        delete nextCart[id];
-        return nextCart;
-      }
-      return {
-        ...prevCart,
-        [id]: { ...existing, qty: newQty }
-      };
-    });
-  };
-
-  // Remove cart item
-  const handleRemoveItem = (id) => {
-    setCart((prevCart) => {
-      const nextCart = { ...prevCart };
-      delete nextCart[id];
-      return nextCart;
-    });
-  };
-
-  // Clear cart
-  const handleClearCart = () => {
-    setCart({});
-  };
-
-  // Place order
-  const handlePlaceOrder = () => {
-    const items = Object.values(cart).filter((x) => x.qty > 0);
-    if (items.length === 0) return;
-    const total = items.reduce((acc, { product: p, qty }) => acc + p.price * qty, 0);
-    const orderId = 'ORD-' + Math.random().toString(36).substr(2, 6).toUpperCase();
-    const statuses = ['pending', 'processing', 'shipped', 'delivered'];
-    const status = statuses[Math.floor(Math.random() * 2)];
-
-    const newOrder = {
-      id: orderId,
-      date: new Date().toLocaleDateString('es-CL'),
-      status,
-      items: items.map(({ product: p, qty }) => ({ name: p.name, qty, price: p.price })),
-      total
-    };
-
-    setOrders((prevOrders) => [newOrder, ...prevOrders]);
-    setOrderSuccessToken(orderId);
-
-    setTimeout(() => {
-      setCart({});
-      setOrderSuccessToken('');
-    }, 1600);
-  };
-
-  // Filter state adjustments
+  // Ajustes de búsqueda
   const handleSearchChange = (query) => {
     setSearch(query);
     setPage(1);
   };
-
-  const cartCount = Object.values(cart).reduce((acc, item) => acc + item.qty, 0);
 
   return (
     <div className="app">
@@ -168,25 +108,25 @@ export default function App() {
 
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         {!isLoggedIn ? (
-          <Login onLoginSuccess={handleLoginSuccess} />
+          <Login onLogin={login} onLoginSuccess={handleLoginSuccess} />
         ) : (
           <>
             {activeTab === 'catalog' && (
               <Catalog
                 search={search}
-                cart={cart}
-                onAddToCart={handleAddToCart}
+                cart={cartState}
+                onAddToCart={addToCart}
                 page={page}
                 onPageChange={setPage}
               />
             )}
             {activeTab === 'cart' && (
               <Cart
-                cart={cart}
-                onQtyChange={handleChangeQty}
-                onRemoveItem={handleRemoveItem}
-                onClearCart={handleClearCart}
-                onPlaceOrder={handlePlaceOrder}
+                cart={cartState}
+                onQtyChange={changeQty}
+                onRemoveItem={removeItem}
+                onClearCart={clearCart}
+                onPlaceOrder={placeOrder}
                 orderSuccessToken={orderSuccessToken}
                 onGoToCatalog={() => setActiveTab('catalog')}
               />
@@ -194,12 +134,14 @@ export default function App() {
             {activeTab === 'orders' && (
               <Orders
                 orders={orders}
-                error={false} // can be set to true if simulating server failure
+                error={false} // Puede setearse a true para simular error de red
               />
             )}
           </>
         )}
       </main>
+      <Footer />
     </div>
   );
 }
+

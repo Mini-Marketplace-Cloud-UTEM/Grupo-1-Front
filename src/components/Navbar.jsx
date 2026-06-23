@@ -11,8 +11,15 @@ export default function Navbar({
 }) {
   return (
     <nav className="nav">
-      <div className="nav-logo">
-        <i className="ti ti-shopping-bag" aria-hidden="true"></i> MiniMarket
+      <div
+        className="nav-logo"
+        onClick={() => onTabChange('catalog')}
+        style={{ cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
+      >
+        <i className="ti ti-shopping-bag" aria-hidden="true" style={{ color: 'var(--color-primary)', fontSize: '18px' }}></i>
+        <span style={{ fontWeight: '800', fontSize: '16px', letterSpacing: '-0.5px' }}>
+          Mini<span style={{ color: 'var(--color-primary)' }}>MarketPlace</span>
+        </span>
       </div>
       {isLoggedIn && (
         <div className="nav-search" id="nav-search-wrap">

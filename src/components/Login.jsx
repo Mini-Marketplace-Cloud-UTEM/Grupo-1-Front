@@ -1,21 +1,22 @@
 import React, { useState } from 'react';
 
-export default function Login({ onLoginSuccess }) {
+export default function Login({ onLogin, onLoginSuccess }) {
   const [email, setEmail] = useState('demo@minimarket.cl');
   const [password, setPassword] = useState('demo1234');
   const [errorMsg, setErrorMsg] = useState('');
   const [tokenDisplay, setTokenDisplay] = useState('');
 
-  const handleLogin = () => {
-    if (email === 'demo@minimarket.cl' && password === 'demo1234') {
-      setErrorMsg('');
-      const mockToken = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkZW1vQG1pbmltYXJrZXQuY2wiLCJleHAiOjE3NTEwMDAwMDB9.demo_jwt_token';
-      setTokenDisplay(`JWT: ${mockToken.slice(0, 40)}...`);
+  const handleLogin = async () => {
+    setErrorMsg('');
+    setTokenDisplay('');
+    try {
+      const loggedUser = await onLogin(email, password);
+      setTokenDisplay(`JWT: ${loggedUser.token.slice(0, 40)}...`);
       setTimeout(() => {
-        onLoginSuccess('Demo Usuario', mockToken);
+        onLoginSuccess(loggedUser.name, loggedUser.token);
       }, 900);
-    } else {
-      setErrorMsg('Credenciales incorrectas.');
+    } catch (err) {
+      setErrorMsg(err.message || 'Error al iniciar sesión.');
       setTokenDisplay('');
     }
   };
