@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useCatalog } from '../adapters/hooks/useCatalog.js';
 
-export default function Catalog({ search, cart, onAddToCart, page, onPageChange }) {
+export default function Catalog({ search, cart, onAddToCart, page, onPageChange, onSelectProduct }) {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [onlyInStock, setOnlyInStock] = useState(false);
   const [maxPrice, setMaxPrice] = useState(1000000);
@@ -125,7 +125,15 @@ export default function Catalog({ search, cart, onAddToCart, page, onPageChange 
               const inCart = cart[p.id]?.qty || 0;
 
               return (
-                <div key={p.id} className="product-card">
+                <div 
+                  key={p.id} 
+                  className="product-card" 
+                  style={{ cursor: 'pointer' }}
+                  onClick={(e) => {
+                    if (e.target.closest('button')) return;
+                    if (onSelectProduct) onSelectProduct(p);
+                  }}
+                >
                   <div className="product-img">
                     {p.imageUrl ? (
                       <img

@@ -6,6 +6,7 @@ import Catalog from './components/Catalog';
 import Cart from './components/Cart';
 import Orders from './components/Orders';
 import Footer from './components/Footer';
+import ProductDetail from './components/ProductDetail';
 
 import { useAuth } from './adapters/hooks/useAuth.js';
 import { useCart } from './adapters/hooks/useCart.js';
@@ -20,6 +21,7 @@ export default function App() {
   } = useAuth();
 
   const [activeTab, setActiveTab] = useState('catalog');
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
@@ -88,12 +90,19 @@ export default function App() {
     setPage(1);
   };
 
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    if (tab !== 'detail') {
+      setSelectedProduct(null);
+    }
+  };
+
   return (
     <div className="app">
       <Navbar
         user={user}
         cartCount={cartCount}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         onLogout={handleLogout}
         search={search}
         onSearchChange={handleSearchChange}
@@ -101,8 +110,8 @@ export default function App() {
       />
       
       <Tabs
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
+        activeTab={activeTab === 'detail' ? 'catalog' : activeTab}
+        onTabChange={handleTabChange}
         isLoggedIn={isLoggedIn}
       />
 
@@ -118,6 +127,20 @@ export default function App() {
                 onAddToCart={addToCart}
                 page={page}
                 onPageChange={setPage}
+                onSelectProduct={(p) => {
+                  setSelectedProduct(p);
+                  setActiveTab('detail');
+                }}
+              />
+            )}
+            {activeTab === 'detail' && (
+              <ProductDetail
+                product={selectedProduct}
+                onBack={() => {
+                  setSelectedProduct(null);
+                  setActiveTab('catalog');
+                }}
+                onAddToCart={addToCart}
               />
             )}
             {activeTab === 'cart' && (
