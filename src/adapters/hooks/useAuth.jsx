@@ -1,7 +1,13 @@
-import { useState } from 'react';
+import { createContext, useContext, useState } from 'react';
 import { loginUserUseCase } from '../../config/di.js';
 
-export function useAuth() {
+// Context, no solo un hook con useState local - varios componentes
+// (LoginPage, RequireAuth, StorePage, etc.) necesitan ver el MISMO
+// estado de sesion. Un hook con useState propio le daria a cada uno su
+// propia copia desincronizada.
+const AuthContext = createContext(null);
+
+export function AuthProvider({ children }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
@@ -43,7 +49,7 @@ export function useAuth() {
     setErrorMsg('');
   };
 
-  return {
+  const value = {
     isLoggedIn,
     token,
     user,
@@ -54,4 +60,14 @@ export function useAuth() {
     logout,
     setAuthenticatedUser
   };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
+    throw new Error('useAuth debe usarse dentro de <AuthProvider>');
+  }
+  return ctx;
 }

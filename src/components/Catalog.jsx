@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useCatalog } from '../adapters/hooks/useCatalog.js';
 
 export default function Catalog({ search, cart, onAddToCart, page, onPageChange }) {
@@ -126,7 +127,7 @@ export default function Catalog({ search, cart, onAddToCart, page, onPageChange 
 
               return (
                 <div key={p.id} className="product-card">
-                  <div className="product-img">
+                  <Link to={`/productos/${p.id}`} className="product-img">
                     {p.imageUrl ? (
                       <img
                         src={p.imageUrl}
@@ -141,10 +142,12 @@ export default function Catalog({ search, cart, onAddToCart, page, onPageChange 
                     <div className="product-img-placeholder" style={{ display: p.imageUrl ? 'none' : 'flex' }}>
                       📦
                     </div>
-                  </div>
+                  </Link>
                   <div className="product-info">
                     <p className="product-cat">{p.category}</p>
-                    <p className="product-name" title={p.name}>{p.name}</p>
+                    <Link to={`/productos/${p.id}`} className="product-name" title={p.name} style={{ textDecoration: 'none', color: 'inherit' }}>
+                      {p.name}
+                    </Link>
                     <p className="product-price">{fmt(p.price)}</p>
                     <div className="stock-wrapper">
                       {p.inStock ? (

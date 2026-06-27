@@ -11,3 +11,12 @@ export async function fetchProducts({ q = '', page = 1, pageSize = 6 } = {}) {
   }
   return res.json();
 }
+
+export async function fetchProductById(id) {
+  const res = await fetch(`${BFF_URL}/v1/products/${id}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || `Error ${res.status} al cargar el producto`);
+  }
+  return res.json();
+}
