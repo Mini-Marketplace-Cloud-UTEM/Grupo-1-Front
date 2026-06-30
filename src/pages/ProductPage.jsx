@@ -9,77 +9,10 @@ import {
   ChevronRight,
   Heart,
   Share2,
-  ShoppingCart,
-  Shield,
-  Truck,
-  RotateCcw,
-  Star
+  ShoppingCart
 } from 'lucide-react';
 import { fetchProductById, fetchProducts } from '../api';
 import { useCart } from '../adapters/hooks/useCart.jsx';
-
-// Premium static image sets by category as requested for mockup styling
-const CATEGORY_IMAGE_SETS = {
-  'electrónica': [
-    "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=700&h=700&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=700&h=700&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1484704849700-f032a568e944?w=700&h=700&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1524678714210-9917a6c619c2?w=700&h=700&fit=crop&auto=format"
-  ],
-  'hogar': [
-    "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=700&h=700&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1507089947368-19c1da9775ae?w=700&h=700&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=700&h=700&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=700&h=700&fit=crop&auto=format"
-  ],
-  'herramientas': [
-    "https://images.unsplash.com/photo-1530124560672-9999f84866ca?w=700&h=700&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1504148455328-c376907d081c?w=700&h=700&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1581147036324-c17ac41dfa6c?w=700&h=700&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=700&h=700&fit=crop&auto=format"
-  ],
-  'tecnología': [
-    "https://images.unsplash.com/photo-1519086588705-c935fdedcc14?w=700&h=700&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1587831990711-23ca6441447b?w=700&h=700&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1632064824547-e77c36851495?w=700&h=700&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1618424181497-157f25b6ddd5?w=700&h=700&fit=crop&auto=format"
-  ],
-  'default': [
-    "https://images.unsplash.com/photo-1519086588705-c935fdedcc14?w=700&h=700&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1587831990711-23ca6441447b?w=700&h=700&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1632064824547-e77c36851495?w=700&h=700&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1618424181497-157f25b6ddd5?w=700&h=700&fit=crop&auto=format"
-  ]
-};
-
-const getStaticImagesForProduct = (category) => {
-  if (!category) return CATEGORY_IMAGE_SETS.default;
-  const key = category.toLowerCase();
-  if (key.includes('electro')) return CATEGORY_IMAGE_SETS['electrónica'];
-  if (key.includes('hogar')) return CATEGORY_IMAGE_SETS['hogar'];
-  if (key.includes('herramienta')) return CATEGORY_IMAGE_SETS['herramientas'];
-  if (key.includes('tecnología') || key.includes('cpu')) return CATEGORY_IMAGE_SETS['tecnología'];
-  return CATEGORY_IMAGE_SETS.default;
-};
-
-// Static images helper for similar products cards
-const getSingleStaticImage = (name, index) => {
-  const images = [
-    "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&h=400&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1572536147248-ac59a8abfa4b?w=400&h=400&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1599669454699-248893623440?w=400&h=400&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=400&h=400&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1608042314453-ae338d80c427?w=400&h=400&fit=crop&auto=format"
-  ];
-  if (!name) return images[index % images.length];
-  const lower = name.toLowerCase();
-  if (lower.includes('sport')) return images[0];
-  if (lower.includes('earbuds') || lower.includes('premium')) return images[1];
-  if (lower.includes('gaming') || lower.includes('rgb')) return images[2];
-  if (lower.includes('studio') || lower.includes('mk2')) return images[3];
-  if (lower.includes('banda') || lower.includes('deportiva')) return images[4];
-  return images[index % images.length];
-};
 
 export default function ProductPage() {
   const { id } = useParams();
@@ -93,7 +26,6 @@ export default function ProductPage() {
   const [similarProducts, setSimilarProducts] = useState([]);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
 
-  const [activeImage, setActiveImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [wishlist, setWishlist] = useState(false);
 
@@ -105,7 +37,6 @@ export default function ProductPage() {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    setActiveImage(0);
     setQuantity(1);
 
     // Fetch product details from BFF
@@ -180,15 +111,6 @@ export default function ProductPage() {
     );
   }
 
-  // Load category-matching static images set for the mockup gallery
-  const images = getStaticImagesForProduct(product.category);
-
-  // Mock properties to keep Figma premium layouts
-  const mockRating = (4.3 + (product.id % 5) * 0.1).toFixed(1);
-  const mockReviews = 100 + (product.id * 17) % 400;
-  const mockOldPrice = Math.round(product.price * 1.25);
-  const discountPercent = Math.round(((mockOldPrice - product.price) / mockOldPrice) * 100);
-
   // Fallback similar products if BFF returns none
   const fallbackSimilar = [
     { id: 'sim-1', name: "Auriculares Sport BT", price: 59990 },
@@ -197,32 +119,6 @@ export default function ProductPage() {
     { id: 'sim-4', name: "Auriculares Studio MK2", price: 199990 },
   ];
   const listSimilar = similarProducts.length > 0 ? similarProducts : fallbackSimilar;
-
-  // Star rendering helper
-  const renderStars = (rating) => {
-    return (
-      <div className="flex items-center gap-1">
-        <div className="flex items-center gap-0.5">
-          {[1, 2, 3, 4, 5].map((s) => (
-            <Star
-              key={s}
-              size={13}
-              className={
-                s <= Math.floor(rating)
-                  ? "f_detail_star fill-[#28C064] text-[#28C064]"
-                  : s - rating < 1
-                    ? "f_detail_star_half fill-[#28C064]/50 text-[#28C064]/50"
-                    : "f_detail_star_empty text-zinc-600"
-              }
-            />
-          ))}
-        </div>
-        <span className="text-xs text-zinc-400 ml-1">
-          {rating} ({mockReviews.toLocaleString()})
-        </span>
-      </div>
-    );
-  };
 
   return (
     <div className="f_detail_wrapper bg-[#121212] text-white">
@@ -258,16 +154,21 @@ export default function ProductPage() {
           {/* ── Left: Image Gallery ── */}
           <div style={{padding: '2rem' }} className="lg:sticky lg:top-8">
             <div className="f_detail_gallery_main bg-[#2A2A2A] rounded-2xl overflow-hidden relative flex items-center justify-center">
-              <img
-                src={images[activeImage]}
-                alt={product.name}
-                className="w-full h-full object-contain p-6 transition-opacity duration-300" 
-              />
-              
-              {/* Discount Tag */}
-              <span style={{padding: '0.5rem' }} className="absolute top-4 left-4 bg-[#28C064] text-[#0A1A10] text-xs font-bold px-3 py-1 rounded-full">
-                -{discountPercent}% OFF
-              </span>
+              {product.imageUrl ? (
+                <img
+                  src={product.imageUrl}
+                  alt={product.name}
+                  className="w-full h-full object-contain p-6"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    const placeholder = e.currentTarget.nextSibling;
+                    if (placeholder) placeholder.style.display = 'flex';
+                  }}
+                />
+              ) : null}
+              <div className="product-img-placeholder flex items-center justify-center text-6xl" style={{ display: product.imageUrl ? 'none' : 'flex', width: '100%', height: '100%', minHeight: '300px' }}>
+                📦
+              </div>
 
               {/* Share button */}
               <button 
@@ -276,35 +177,6 @@ export default function ProductPage() {
               >
                 <Share2 size={16} className="text-white" />
               </button>
-
-              {/* Arrows */}
-              <button
-                onClick={() => setActiveImage((p) => (p - 1 + images.length) % images.length)}
-                className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/55 hover:bg-black/85 p-2 rounded-full border-none cursor-pointer text-white transition-colors"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button
-                onClick={() => setActiveImage((p) => (p + 1) % images.length)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/55 hover:bg-black/85 p-2 rounded-full border-none cursor-pointer text-white transition-colors"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
-
-            {/* Thumbnails */}
-            <div style={{ padding: '2rem' }} className="grid grid-cols-4 gap-3 mt-4">
-              {images.map((img, i) => (
-                <button
-                  key={i}
-                  onClick={() => setActiveImage(i)}
-                  className={`f_detail_thumbnail aspect-square relative ${
-                    activeImage === i ? 'f_active' : ''
-                  }`}
-                >
-                  <img src={img} alt={`Vista ${i + 1}`} className="w-full h-full object-contain p-1" />
-                </button>
-              ))}
             </div>
           </div>
 
@@ -317,10 +189,6 @@ export default function ProductPage() {
               <h1 className="text-2xl md:text-3xl font-extrabold mt-2.5 mb-2 text-white leading-tight">
                 {product.name}
               </h1>
-              
-              <div className="mt-3">
-                {renderStars(mockRating)}
-              </div>
             </div>
 
             <hr className="border-zinc-800" />
@@ -330,12 +198,6 @@ export default function ProductPage() {
               <span className="text-3xl font-black text-white">
                 {fmt(product.price)}
               </span>
-              <span className="text-lg text-zinc-500 line-through">
-                {fmt(mockOldPrice)}
-              </span>
-              <span className="text-xs font-bold bg-[#28C064]/10 text-[#28C064] px-2.5 py-0.5 rounded-full">
-                Ahorras {fmt(mockOldPrice - product.price)}
-              </span>
             </div>
 
             {/* Stock indicator */}
@@ -344,13 +206,11 @@ export default function ProductPage() {
                 <>
                   <CheckCircle size={16} className="text-[#28C064]" />
                   <span className="text-sm font-semibold text-[#28C064]">Disponible en stock</span>
-                  <span className="text-xs text-zinc-400">— Envío rápido a todo Chile</span>
                 </>
               ) : (
                 <>
                   <XCircle size={16} className="text-red-500" />
                   <span className="text-sm font-semibold text-red-500">Agotado temporalmente</span>
-                  <span className="text-xs text-zinc-400">— Sin fecha estimada</span>
                 </>
               )}
             </div>
@@ -359,20 +219,6 @@ export default function ProductPage() {
             <p className="text-sm text-zinc-400 leading-relaxed">
               {product.description || 'Experimenta el máximo rendimiento y diseño de última generación con este producto en MiniMarketPlace. Diseñado bajo los más altos estándares de calidad para satisfacer todas tus necesidades cotidianas y profesionales.'}
             </p>
-
-            {/* Trust Badges */}
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { icon: Shield, label: "Garantía de 2 años" },
-                { icon: Truck, label: "Despacho Express" },
-                { icon: RotateCcw, label: "30 Días de Cambio" },
-              ].map(({ icon: Icon, label }) => (
-                <div key={label} className="f_detail_badge_trust">
-                  <Icon size={18} className="f_detail_price_accent mb-1.5" />
-                  <span className="text-[10px] text-zinc-400 font-medium leading-tight">{label}</span>
-                </div>
-              ))}
-            </div>
 
             {/* Add to Cart widget */}
             <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 mt-2">
@@ -457,18 +303,25 @@ export default function ProductPage() {
             </div>
           ) : (
             <div style={{padding: '1.5rem' }}className="f_similar_carousel" ref={carouselRef}>
-              {listSimilar.map((item, index) => {
-                const itemImg = getSingleStaticImage(item.name, index);
-                const itemRating = (4.2 + (index % 4) * 0.2).toFixed(1);
-                
+              {listSimilar.map((item) => {
                 return (
                   <div key={item.id} className="f_similar_card">
-                    <Link to={`/productos/${item.id}`} className="block aspect-square bg-[#2A2A2A] overflow-hidden">
-                      <img
-                        src={itemImg}
-                        alt={item.name}
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                      />
+                    <Link to={`/productos/${item.id}`} className="block aspect-square bg-[#2A2A2A] overflow-hidden relative flex items-center justify-center">
+                      {item.imageUrl ? (
+                        <img
+                          src={item.imageUrl}
+                          alt={item.name}
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const placeholder = e.currentTarget.nextSibling;
+                            if (placeholder) placeholder.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div className="product-img-placeholder flex items-center justify-center text-3xl" style={{ display: item.imageUrl ? 'none' : 'flex', width: '100%', height: '100%' }}>
+                        📦
+                      </div>
                     </Link>
                     <div style={{ padding: '0.75rem' }}className="p-3 flex flex-col gap-2">
                       <Link 
@@ -479,11 +332,6 @@ export default function ProductPage() {
                         {item.name}
                       </Link>
                       
-                      <div className="flex items-center gap-1">
-                        <Star size={10} className="fill-[#28C064] text-[#28C064]" />
-                        <span className="text-[10px] text-zinc-400">{itemRating}</span>
-                      </div>
-
                       <p className="text-sm font-black f_detail_price_accent">
                         {fmt(item.price)}
                       </p>

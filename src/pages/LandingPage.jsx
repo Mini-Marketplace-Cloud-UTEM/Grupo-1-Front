@@ -1,104 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Zap,
   ChevronRight,
-  Star,
   Truck,
   Shield,
   CreditCard,
-  Package,
-  ShoppingCart
+  Package
 } from 'lucide-react';
 import { useCatalog } from '../adapters/hooks/useCatalog.js';
 import Footer from '../components/Footer';
-
-// Static high-quality images from the Figma mockup to keep the premium design look
-const STATIC_PRODUCT_IMAGES = [
-  "https://images.unsplash.com/photo-1519086588705-c935fdedcc14?w=600&h=450&fit=crop&auto=format",
-  "https://images.unsplash.com/photo-1583305727488-61f82c7eae4b?w=600&h=450&fit=crop&auto=format",
-  "https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=600&h=450&fit=crop&auto=format",
-  "https://images.unsplash.com/photo-1586024486164-ce9b3d87e09f?w=600&h=450&fit=crop&auto=format",
-  "https://images.unsplash.com/photo-1587831990711-23ca6441447b?w=600&h=450&fit=crop&auto=format",
-  "https://images.unsplash.com/photo-1632064824547-e77c36851495?w=600&h=450&fit=crop&auto=format",
-];
-
-const getStaticProductImage = (name, index) => {
-  if (!name) return STATIC_PRODUCT_IMAGES[index % STATIC_PRODUCT_IMAGES.length];
-  const lower = name.toLowerCase();
-  if (lower.includes('macbook')) return STATIC_PRODUCT_IMAGES[0];
-  if (lower.includes('sony') || lower.includes('audifono') || lower.includes('headphone')) return STATIC_PRODUCT_IMAGES[1];
-  if (lower.includes('iphone') || lower.includes('celular') || lower.includes('phone')) return STATIC_PRODUCT_IMAGES[2];
-  if (lower.includes('samsung') || lower.includes('televisor') || lower.includes('tv')) return STATIC_PRODUCT_IMAGES[3];
-  if (lower.includes('logitech') || lower.includes('mouse') || lower.includes('teclado')) return STATIC_PRODUCT_IMAGES[4];
-  if (lower.includes('monitor') || lower.includes('dell') || lower.includes('pantalla')) return STATIC_PRODUCT_IMAGES[5];
-  return STATIC_PRODUCT_IMAGES[index % STATIC_PRODUCT_IMAGES.length];
-};
 
 export default function LandingPage() {
   const navigate = useNavigate();
   // Fetch real catalog products from BFF for public preview
   const { products, loading, error } = useCatalog('', 1);
-  
-  // Real-time countdown timer for Flash Deals (mock countdown starting at 5h 42m 18s)
-  const [timeLeft, setTimeLeft] = useState(20538); // seconds
-  
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(prev => (prev > 0 ? prev - 1 : 20538));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const formatTimer = (seconds) => {
-    const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
-    const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-    const s = (seconds % 60).toString().padStart(2, '0');
-    return `${h}:${m}:${s}`;
-  };
 
   // Categories list mapped to existing categories with mockup details
   const categories = [
-    { id: 'Electrónica', name: "Electrónica", icon: "⚡", count: 1284, color: "#1E3A5F" },
-    { id: 'Tecnología', name: "Tecnología", icon: "💻", count: 876, color: "#1A3D2E" },
-    { id: 'Hogar', name: "Hogar y Electro", icon: "🏠", count: 2103, color: "#3D2A1A" },
-    { id: 'Herramientas', name: "Herramientas", icon: "🔧", count: 534, color: "#2D1A3D" }
-  ];
-
-  // Daily Deals static mockup items as requested (combining Figma design style)
-  const dailyDeals = [
-    {
-      id: 'deal-1',
-      name: "Teclado Mecánico Keychron K2",
-      price: 79990,
-      oldPrice: 119990,
-      discount: 33,
-      img: "https://images.unsplash.com/photo-1626958390943-a70309376444?w=400&h=300&fit=crop&auto=format",
-    },
-    {
-      id: 'deal-2',
-      name: "Webcam Logitech C920",
-      price: 54990,
-      oldPrice: 84990,
-      discount: 35,
-      img: "https://images.unsplash.com/photo-1614588876378-b2ffa4520c22?w=400&h=300&fit=crop&auto=format",
-    },
-    {
-      id: 'deal-3',
-      name: "SSD Samsung 1TB NVMe",
-      price: 69990,
-      oldPrice: 99990,
-      discount: 30,
-      img: "https://images.unsplash.com/photo-1601737487795-dab272f52420?w=400&h=300&fit=crop&auto=format",
-    },
-    {
-      id: 'deal-4',
-      name: "Auriculares AirPods Pro 2",
-      price: 189990,
-      oldPrice: 249990,
-      discount: 24,
-      img: "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?w=400&h=300&fit=crop&auto=format",
-    }
+    { id: 'Electrónica', name: "Electrónica", icon: "⚡", color: "#1E3A5F" },
+    { id: 'Tecnología', name: "Tecnología", icon: "💻", color: "#1A3D2E" },
+    { id: 'Hogar', name: "Hogar y Electro", icon: "🏠", color: "#3D2A1A" },
+    { id: 'Herramientas', name: "Herramientas", icon: "🔧", color: "#2D1A3D" }
   ];
 
   const fmt = (n) => '$' + n.toLocaleString('es-CL');
@@ -199,65 +122,9 @@ export default function LandingPage() {
                 </div>
                 <div>
                   <span className="text-sm font-bold text-white group-hover:text-[#22C55E] transition-colors">{cat.name}</span>
-                  <p className="text-xs f_text_muted mt-1">{cat.count.toLocaleString()} productos</p>
                 </div>
               </button>
             ))}
-          </div>
-        </section>
-
-        {/* ── Ofertas del día (Placeholders with redirects) ── */}
-        <section style={{ padding: '1rem' }}>
-          <div className="f_card_dark p-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-              <div className="flex items-center gap-3">
-                <div className="f_flash_icon_wrap w-9 h-9">
-                  <Zap size={18} className="text-red-500 fill-red-500" />
-                </div>
-                <div>
-                  <h2 className="text-lg md:text-xl font-bold text-white" style={{ marginTop: '1rem', marginLeft: '1rem', padding: '0.5rem' }}>Ofertas del día</h2>
-                  <p className="text-[10px] uppercase tracking-wider f_text_muted" style={{ marginLeft: '1rem', padding: '0.5rem' }}>Inicia sesión para comprar</p>
-                </div>
-                <div className="f_deal_timer px-3 py-1.5 rounded-lg font-mono font-bold text-sm md:text-base ml-2">
-                  {formatTimer(timeLeft)}
-                </div>
-              </div>
-              <button 
-                onClick={handleAction}
-                className="text-sm font-semibold flex items-center gap-1 hover:underline f_green_text bg-transparent border-none cursor-pointer self-start md:self-auto"
-                style={{ padding: '0.5rem' }}
-              >
-                Ver todas <ChevronRight size={14} />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4" style={{ marginLeft: '1rem',marginRight: '1rem', padding: '0.5rem' }}>
-              {dailyDeals.map((d) => (
-                <div
-                  key={d.id}
-                  className="f_card_dark rounded-xl overflow-hidden cursor-pointer group border f_border_dark"
-                  style={{ background: '#0B0F0E' }}
-                  onClick={handleAction}
-                >
-                  <div className="relative aspect-[4/3] bg-[#0B0F0E] overflow-hidden">
-                    <img src={d.img} alt={d.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                    <span className="absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-red-500 text-white">
-                      -{d.discount}%
-                    </span>
-                  </div>
-                  <div className="p-3">
-                    <p className="text-xs font-bold text-white line-clamp-2 mb-1.5 h-8 leading-tight" style={{ marginLeft: '0.5rem', padding: '0.5rem' }}>{d.name}</p>
-                    <div className="flex items-baseline gap-2 mb-2">
-                      <span className="text-sm font-bold f_green_text" style={{ marginLeft: '0.5rem', padding: '0.5rem' }}>{fmt(d.price)}</span>
-                      <span className="text-[10px] line-through f_text_muted">{fmt(d.oldPrice)}</span>
-                    </div>
-                    <button className="f_green_btn w-full py-1.5 text-[11px] font-bold" style={{ padding: '0.5rem' }}>
-                      Comprar
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         </section>
 
@@ -285,21 +152,26 @@ export default function LandingPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5" style={{ marginLeft: '1rem', padding: '0.5rem' }}>
-              {products.slice(0, 3).map((p, index) => {
-                const staticImg = getStaticProductImage(p.name, index);
-                const mockRating = (4.5 + (p.id % 5) * 0.1).toFixed(1);
-                const mockReviews = 100 + (p.id * 17) % 400;
-                const mockOldPrice = p.price + 50000;
-
+              {products.slice(0, 3).map((p) => {
                 return (
                   <div key={p.id} className="f_card_dark flex flex-col justify-between" onClick={handleAction} style={{ cursor: 'pointer', marginLeft: '1rem', padding: '0.5rem' }}>
-                    <div className="relative overflow-hidden aspect-[4/3] bg-[#0B0F0E] rounded-t-2xl">
-                      <img
-                        src={staticImg}
-                        alt={p.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      <span style={{ padding: '0.5rem' }} className="text-[10px] font-bold px-2.5 py-0.5 rounded-full f_badge_primary">
+                    <div className="relative overflow-hidden aspect-[4/3] bg-[#0B0F0E] rounded-t-2xl flex items-center justify-center">
+                      {p.imageUrl ? (
+                        <img
+                          src={p.imageUrl}
+                          alt={p.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const placeholder = e.currentTarget.nextSibling;
+                            if (placeholder) placeholder.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div className="product-img-placeholder flex items-center justify-center text-4xl" style={{ display: p.imageUrl ? 'none' : 'flex', width: '100%', height: '100%' }}>
+                        📦
+                      </div>
+                      <span style={{ padding: '0.5rem', position: 'absolute' }} className="top-3 left-3 text-[10px] font-bold px-2.5 py-0.5 rounded-full f_badge_primary">
                         Vista Previa
                       </span>
                     </div>
@@ -308,25 +180,12 @@ export default function LandingPage() {
                       <div>
                         <p className="text-[10px] uppercase tracking-wider f_text_muted mb-1 font-semibold" style={{ padding: '0.5rem' }}>{p.category || 'Tecnología'}</p>
                         <h3 className="font-bold text-sm text-white line-clamp-2 h-10 leading-snug" style={{ padding: '0.5rem' }}>{p.name}</h3>
-                        <div className="flex items-center gap-2 mt-2 mb-3">
-                          <span className="flex items-center gap-0.5">
-                            {[1, 2, 3, 4, 5].map((i) => (
-                              <Star
-                                key={i}
-                                size={11}
-                                className={i <= Math.round(mockRating) ? "text-yellow-400 fill-yellow-400" : "text-[#2A2F2D]"}
-                              />
-                            ))}
-                          </span>
-                          <span className="text-[10px] f_text_muted">({mockReviews})</span>
-                        </div>
                       </div>
 
                       <div>
                         <div className="flex items-end justify-between mb-4">
                           <div>
                             <p className="text-lg font-bold f_green_text font-mono">{fmt(p.price)}</p>
-                            <p className="text-xs line-through f_text_muted">{fmt(mockOldPrice)}</p>
                           </div>
                         </div>
 
