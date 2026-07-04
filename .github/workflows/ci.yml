@@ -1,0 +1,36 @@
+name: CI
+
+# Nuestro CI propio (no reemplaza el auto-deploy de Vercel; lo complementa).
+# Corre en cada push y en cada PR sobre las tres ramas de larga vida.
+on:
+  push:
+    branches: [main, QA, Dev]
+  pull_request:
+    branches: [main, QA, Dev]
+
+jobs:
+  build:
+    name: Lint y build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar el repo
+        uses: actions/checkout@v4
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Lint (ESLint)
+        run: npm run lint
+
+      - name: Build (Vite)
+        run: npm run build
+
+      - name: Auditoria de dependencias
+        run: npm audit --audit-level=high
+        continue-on-error: true

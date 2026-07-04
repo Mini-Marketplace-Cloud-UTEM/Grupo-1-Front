@@ -1,5 +1,6 @@
 import { createContext, useContext, useState } from 'react';
 import { loginUserUseCase } from '../../config/di.js';
+import { setAuthToken } from '../../api.js';
 
 // Context, no solo un hook con useState local - varios componentes
 // (LoginPage, RequireAuth, StorePage, etc.) necesitan ver el MISMO
@@ -21,6 +22,7 @@ export function AuthProvider({ children }) {
       const loggedUser = await loginUserUseCase.execute(email, password);
       setUser(loggedUser.name);
       setToken(loggedUser.token);
+      setAuthToken(loggedUser.token); // que bffFetch pueda adjuntar el Bearer
       setIsLoggedIn(true);
       setErrorMsg('');
       return loggedUser;
@@ -38,6 +40,7 @@ export function AuthProvider({ children }) {
   const setAuthenticatedUser = (name, jwtToken) => {
     setUser(name);
     setToken(jwtToken);
+    setAuthToken(jwtToken);
     setIsLoggedIn(true);
     setErrorMsg('');
   };
@@ -45,6 +48,7 @@ export function AuthProvider({ children }) {
   const logout = () => {
     setIsLoggedIn(false);
     setToken(null);
+    setAuthToken(null);
     setUser(null);
     setErrorMsg('');
   };

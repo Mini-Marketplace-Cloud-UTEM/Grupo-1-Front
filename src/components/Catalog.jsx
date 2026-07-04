@@ -7,7 +7,7 @@ export default function Catalog({ search, cart, onAddToCart, page, onPageChange,
   const [onlyInStock, setOnlyInStock] = useState(false);
   const [maxPrice, setMaxPrice] = useState(1000000);
 
-  const { products, pagination, loading, error } = useCatalog(search, page);
+  const { products, pagination, loading, error, retry } = useCatalog(search, page);
 
   const fmt = (n) => '$' + n.toLocaleString('es-CL');
 
@@ -37,8 +37,15 @@ export default function Catalog({ search, cart, onAddToCart, page, onPageChange,
         <div className="error-card">
           <i className="ti ti-alert-triangle" style={{ fontSize: '48px', color: 'var(--color-text-danger)' }} aria-hidden="true"></i>
           <p style={{ color: 'var(--color-text-danger)', fontWeight: '500', marginTop: '12px' }}>
-            Error al conectar con el BFF: {error}
+            No se pudo cargar el catálogo: {error}
           </p>
+          <button
+            className="btn btn-primary"
+            style={{ marginTop: '16px' }}
+            onClick={retry}
+          >
+            <i className="ti ti-refresh" aria-hidden="true"></i> Reintentar
+          </button>
         </div>
       </div>
     );

@@ -6,6 +6,8 @@ export function useCatalog(search, page) {
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Bumpea este contador para volver a pedir los datos (boton "Reintentar").
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -30,12 +32,15 @@ export function useCatalog(search, page) {
     return () => {
       cancelled = true;
     };
-  }, [search, page]);
+  }, [search, page, reloadKey]);
+
+  const retry = () => setReloadKey((k) => k + 1);
 
   return {
     products,
     pagination,
     loading,
-    error
+    error,
+    retry
   };
 }

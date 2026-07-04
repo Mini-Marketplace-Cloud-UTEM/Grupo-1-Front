@@ -7,6 +7,7 @@ import StorePage from './pages/StorePage';
 import ProductPage from './pages/ProductPage';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import NotFound from './pages/NotFound';
 
 import { AuthProvider, useAuth } from './adapters/hooks/useAuth.jsx';
 import { CartProvider } from './adapters/hooks/useCart.jsx';
@@ -56,7 +57,7 @@ export default function App() {
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </CartProvider>
       </AuthProvider>
