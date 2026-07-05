@@ -25,6 +25,7 @@ export default function StorePage() {
   const {
     cartState,
     cartCount,
+    cartTotal,
     orders,
     orderSuccessToken,
     addToCart,
@@ -105,6 +106,7 @@ export default function StorePage() {
         {activeTab === 'cart' && (
           <Cart
             cart={cartState}
+            total={cartTotal}
             onQtyChange={changeQty}
             onRemoveItem={removeItem}
             onClearCart={clearCart}

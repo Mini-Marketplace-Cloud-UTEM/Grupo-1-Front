@@ -78,3 +78,36 @@ export async function fetchProducts({ q = '', page = 1, pageSize = 6 } = {}) {
 export async function fetchProductById(id) {
   return bffFetch(`/v1/products/${id}`);
 }
+
+// ── Carrito (BFF -> Grupo 4). Todas mandan el Bearer si hay sesion. ──
+export async function createCart() {
+  return bffFetch('/v1/cart', { method: 'POST', auth: true });
+}
+
+export async function getCart(cartId) {
+  return bffFetch(`/v1/cart/${cartId}`, { auth: true });
+}
+
+export async function addCartItem(cartId, productId, quantity = 1) {
+  return bffFetch(`/v1/cart/${cartId}/items`, {
+    method: 'POST',
+    auth: true,
+    body: { productId, quantity },
+  });
+}
+
+export async function updateCartItem(cartId, itemId, quantity) {
+  return bffFetch(`/v1/cart/${cartId}/items/${itemId}`, {
+    method: 'PUT',
+    auth: true,
+    body: { quantity },
+  });
+}
+
+export async function removeCartItem(cartId, itemId) {
+  return bffFetch(`/v1/cart/${cartId}/items/${itemId}`, { method: 'DELETE', auth: true });
+}
+
+export async function checkout(cartId) {
+  return bffFetch('/v1/checkout', { method: 'POST', auth: true, body: { cartId } });
+}
