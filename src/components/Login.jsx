@@ -1,29 +1,23 @@
 import React, { useState } from 'react';
 
 export default function Login({ onLogin, onLoginSuccess }) {
-  const [email, setEmail] = useState('demo@minimarket.cl');
-  const [password, setPassword] = useState('demo1234');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-  const [tokenDisplay, setTokenDisplay] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const handleLogin = async () => {
+    if (submitting) return;
     setErrorMsg('');
-    setTokenDisplay('');
+    setSubmitting(true);
     try {
       const loggedUser = await onLogin(email, password);
-      setTokenDisplay(`JWT: ${loggedUser.token.slice(0, 40)}...`);
-      setTimeout(() => {
-        onLoginSuccess(loggedUser.name, loggedUser.token);
-      }, 900);
+      onLoginSuccess(loggedUser.name, loggedUser.token);
     } catch (err) {
       setErrorMsg(err.message || 'Error al iniciar sesión.');
-      setTokenDisplay('');
+    } finally {
+      setSubmitting(false);
     }
-  };
-
-  const handleSimulateFail = () => {
-    setErrorMsg('Error 401 — No autorizado. Verifica tus credenciales.');
-    setTokenDisplay('');
   };
 
   return (
@@ -31,7 +25,7 @@ export default function Login({ onLogin, onLoginSuccess }) {
       <div className="login-card">
         <h2>Iniciar sesión</h2>
         <p>Accede para explorar el catálogo y gestionar tus pedidos.</p>
-        
+
         {errorMsg && (
           <div className="error-msg" id="login-error">
             <i className="ti ti-alert-circle" aria-hidden="true"></i>
@@ -44,12 +38,12 @@ export default function Login({ onLogin, onLoginSuccess }) {
           <input
             type="email"
             id="login-email"
-            placeholder="usuario@empresa.cl"
+            placeholder="usuario@correo.cl"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
-        
+
         <div className="form-group">
           <label>Contraseña</label>
           <input
@@ -64,18 +58,14 @@ export default function Login({ onLogin, onLoginSuccess }) {
           />
         </div>
 
-        <button className="btn btn-primary" style={{ width: '100%', marginTop: '4px' }} onClick={handleLogin}>
-          Ingresar
+        <button
+          className="btn btn-primary"
+          style={{ width: '100%', marginTop: '4px' }}
+          onClick={handleLogin}
+          disabled={submitting}
+        >
+          {submitting ? 'Ingresando…' : 'Ingresar'}
         </button>
-        <button className="btn" style={{ width: '100%', marginTop: '8px', fontSize: '12px' }} onClick={handleSimulateFail}>
-          Simular error 401
-        </button>
-
-        {tokenDisplay && (
-          <div className="token-pill" id="token-display">
-            {tokenDisplay}
-          </div>
-        )}
       </div>
     </div>
   );
