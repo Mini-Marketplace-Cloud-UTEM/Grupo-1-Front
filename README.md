@@ -5,6 +5,7 @@ Consume el **BFF** (repo separado `Grupo-1-BFF`, desplegado en Render), que a su
 vez orquesta los servicios de los grupos 2–8.
 
 - **Frontend (este repo):** React 18 + Vite 5 + React Router 7 + Tailwind 4.
+  Producción: `https://arq-soft-proyecto-front-end.vercel.app`
 - **BFF:** `https://grupo-1-bff.onrender.com` (repo `Grupo-1-BFF`, no este).
 
 ---
