@@ -2,6 +2,7 @@ import React from 'react';
 
 export default function Cart({
   cart,
+  total,
   onQtyChange,
   onRemoveItem,
   onClearCart,
@@ -26,7 +27,10 @@ export default function Cart({
     );
   }
 
-  const total = items.reduce((acc, item) => acc + item.product.price * item.qty, 0);
+  // El total oficial lo entrega el BFF (Grupo 4); no lo recalculamos. Si por
+  // algun motivo no llega, caemos a la suma local como respaldo.
+  const grandTotal =
+    total != null ? total : items.reduce((acc, item) => acc + item.product.price * item.qty, 0);
 
   return (
     <div className="page" id="page-cart">
@@ -86,7 +90,7 @@ export default function Cart({
               </div>
               <div className="summary-row total">
                 <span>Total</span>
-                <span id="cart-total">{fmt(total)}</span>
+                <span id="cart-total">{fmt(grandTotal)}</span>
               </div>
               <button className="btn btn-primary" style={{ width: '100%', marginTop: '14px' }} onClick={onPlaceOrder}>
                 Generar pedido
