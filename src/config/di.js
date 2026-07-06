@@ -4,6 +4,7 @@ import { MemoryOrderRepository } from '../adapters/repositories/MemoryOrderRepos
 
 import { GetProductCatalog } from '../use-cases/GetProductCatalog.js';
 import { LoginUser } from '../use-cases/LoginUser.js';
+import { RegisterUser } from '../use-cases/RegisterUser.js';
 import { PlaceOrder } from '../use-cases/PlaceOrder.js';
 
 // Instanciar adaptadores de infraestructura
@@ -14,4 +15,5 @@ export const orderRepository = new MemoryOrderRepository(); // Exportado por si 
 // Instanciar Casos de Uso con dependencias inyectadas
 export const getProductCatalogUseCase = new GetProductCatalog(productRepository);
 export const loginUserUseCase = new LoginUser(authService);
+export const registerUserUseCase = new RegisterUser(authService);
 export const placeOrderUseCase = new PlaceOrder(orderRepository);

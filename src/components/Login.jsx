@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 export default function Login({ onLogin, onLoginSuccess }) {
   const [email, setEmail] = useState('');
@@ -66,6 +67,10 @@ export default function Login({ onLogin, onLoginSuccess }) {
         >
           {submitting ? 'Ingresando…' : 'Ingresar'}
         </button>
+
+        <p style={{ marginTop: '12px', fontSize: '13px', textAlign: 'center' }}>
+          ¿No tienes cuenta? <Link to="/registro" className="f_detail_price_accent">Crear cuenta</Link>
+        </p>
       </div>
     </div>
   );
