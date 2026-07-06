@@ -1,17 +1,17 @@
 import { IAuthService } from '../../domain/ports/IAuthService.js';
+import { bffFetch } from '../../api.js';
 
 export class ApiAuthService extends IAuthService {
   async login(email, password) {
-    // Simulado para la demo, igual al Login.jsx original
-    if (email === 'demo@minimarket.cl' && password === 'demo1234') {
-      const mockToken = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkZW1vQG1pbmltYXJrZXQuY2wiLCJleHAiOjE3NTEwMDAwMDB9.demo_jwt_token';
-      return {
-        email,
-        name: 'Demo Usuario',
-        token: mockToken
-      };
-    } else {
-      throw new Error('Credenciales incorrectas.');
-    }
+    // Login real contra el BFF (que a su vez llama a Grupo 2).
+    const data = await bffFetch('/v1/auth/login', {
+      method: 'POST',
+      body: { email, password },
+    });
+    return {
+      email,
+      name: data.user?.name || email,
+      token: data.accessToken,
+    };
   }
 }

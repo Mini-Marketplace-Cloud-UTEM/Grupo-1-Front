@@ -29,10 +29,11 @@ function LoginPage() {
   return <Login onLogin={login} onLoginSuccess={handleLoginSuccess} />;
 }
 
-// Protege /tienda - si no hay sesion, redirige a /login.
+// Protege /tienda - si no hay sesion, redirige al landing (/), que es el
+// punto de entrada por defecto para quien no ha iniciado sesion.
 function RequireAuth({ children }) {
   const { isLoggedIn } = useAuth();
-  return isLoggedIn ? children : <Navigate to="/login" replace />;
+  return isLoggedIn ? children : <Navigate to="/" replace />;
 }
 
 export default function App() {

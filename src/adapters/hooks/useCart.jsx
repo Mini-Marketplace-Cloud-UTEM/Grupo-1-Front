@@ -1,17 +1,21 @@
-import { createContext, useContext, useState } from 'react';
-import { Cart } from '../../domain/entities/Cart.js';
-import { placeOrderUseCase } from '../../config/di.js';
+import { createContext, useContext, useRef, useState } from 'react';
+import {
+  createCart,
+  getCart,
+  addCartItem,
+  updateCartItem,
+  removeCartItem,
+  checkout,
+} from '../../api.js';
 
-// Context, no solo un hook con useState local - igual razon que useAuth:
-// StorePage (/tienda) y ProductPage (/productos/:id) son rutas hermanas,
-// no una anidada en la otra, asi que necesitan ver el MISMO carro. Antes
-// de esto, agregar un producto desde la pagina de detalle no se reflejaba
-// en /tienda porque cada uno tenia su propia instancia de useCart().
+// Context (misma razon que useAuth): StorePage (/tienda) y ProductPage
+// (/productos/:id) son rutas hermanas y necesitan ver el MISMO carro.
+// El carro real vive en Grupo 4; aca guardamos su estado normalizado que
+// entrega el BFF y lo exponemos con la forma que ya esperan los componentes.
 const CartContext = createContext(null);
 
-// Pedidos de demostracion del mockup (antes se cargaban via seedOrders()
-// al iniciar sesion en el App.jsx viejo). Se siembran una sola vez al
-// montar el provider.
+// Pedidos de demostracion del mockup - el flujo real de pedidos (G5) todavia
+// no se cablea aca, se mantienen como estaban.
 const DEMO_ORDERS = [
   {
     id: 'ORD-A4F2B1',
@@ -42,47 +46,97 @@ const DEMO_ORDERS = [
   }
 ];
 
+// Del carro normalizado del BFF (items: [{itemId, productId, name, unitPrice,
+// quantity, subtotal}]) al mapa keyed por productId que consumen Catalog,
+// LandingTab (cart[p.id]?.qty) y Cart (item.product.{id,name,price}, item.qty).
+function toCartState(cartData) {
+  const map = {};
+  for (const it of cartData?.items || []) {
+    map[it.productId] = {
+      product: { id: it.productId, name: it.name, price: it.unitPrice },
+      qty: it.quantity,
+      itemId: it.itemId,
+    };
+  }
+  return map;
+}
+
 export function CartProvider({ children }) {
-  const [cartState, setCartState] = useState({});
+  const [cartData, setCartData] = useState(null);
+  const [cartError, setCartError] = useState('');
   const [orders, setOrders] = useState(DEMO_ORDERS);
   const [orderSuccessToken, setOrderSuccessToken] = useState('');
+  // Id sincrono para no crear dos carritos si el usuario agrega rapido dos
+  // productos antes de que el estado de React se actualice.
+  const cartIdRef = useRef(null);
 
-  const cart = Cart.fromState(cartState);
+  const cartState = toCartState(cartData);
 
-  const addToCart = (product, qty = 1) => {
+  const ensureCart = async () => {
+    if (cartIdRef.current) return cartIdRef.current;
+    const created = await createCart();
+    cartIdRef.current = created.id;
+    setCartData(created);
+    return created.id;
+  };
+
+  const addToCart = async (product, qty = 1) => {
+    setCartError('');
     try {
-      cart.addItem(product, qty);
-      setCartState(cart.toState());
+      const cartId = await ensureCart();
+      setCartData(await addCartItem(cartId, product.id, qty));
     } catch (err) {
+      setCartError(err.message);
       alert(err.message);
     }
   };
 
-  const changeQty = (productId, delta) => {
-    cart.changeQty(productId, delta);
-    setCartState(cart.toState());
+  const changeQty = async (productId, delta) => {
+    const entry = cartState[productId];
+    if (!entry || !cartIdRef.current) return;
+    const newQty = entry.qty + delta;
+    setCartError('');
+    try {
+      if (newQty <= 0) {
+        await removeCartItem(cartIdRef.current, entry.itemId);
+        setCartData(await getCart(cartIdRef.current));
+      } else {
+        setCartData(await updateCartItem(cartIdRef.current, entry.itemId, newQty));
+      }
+    } catch (err) {
+      setCartError(err.message);
+      alert(err.message);
+    }
   };
 
-  const removeItem = (productId) => {
-    cart.removeItem(productId);
-    setCartState(cart.toState());
+  const removeItem = async (productId) => {
+    const entry = cartState[productId];
+    if (!entry || !cartIdRef.current) return;
+    setCartError('');
+    try {
+      await removeCartItem(cartIdRef.current, entry.itemId);
+      setCartData(await getCart(cartIdRef.current));
+    } catch (err) {
+      setCartError(err.message);
+      alert(err.message);
+    }
   };
 
+  // G4 no expone "vaciar carrito"; soltamos la referencia local (se usa al
+  // cerrar sesion y tras generar el pedido). El carro en G4 queda huerfano.
   const clearCart = () => {
-    cart.clear();
-    setCartState(cart.toState());
+    cartIdRef.current = null;
+    setCartData(null);
+    setCartError('');
   };
 
   const placeOrder = async () => {
-    if (cart.count === 0) return;
+    if (!cartIdRef.current || (cartData?.totalItems || 0) === 0) return;
     try {
-      const order = await placeOrderUseCase.execute(cart);
-      setOrders((prev) => [order, ...prev]);
-      setOrderSuccessToken(order.id);
-
+      const result = await checkout(cartIdRef.current);
+      setOrderSuccessToken(result?.checkoutId || result?.orderId || result?.id || cartIdRef.current);
       setTimeout(() => {
-        cart.clear();
-        setCartState(cart.toState());
+        clearCart();
         setOrderSuccessToken('');
       }, 1600);
     } catch (err) {
@@ -96,7 +150,9 @@ export function CartProvider({ children }) {
 
   const value = {
     cartState,
-    cartCount: cart.count,
+    cartCount: cartData?.totalItems || 0,
+    cartTotal: cartData?.totalPrice || 0,
+    cartError,
     orders,
     orderSuccessToken,
     addToCart,
