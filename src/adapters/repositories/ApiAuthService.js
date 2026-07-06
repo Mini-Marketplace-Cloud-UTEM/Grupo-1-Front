@@ -14,4 +14,18 @@ export class ApiAuthService extends IAuthService {
       token: data.accessToken,
     };
   }
+
+  async register(name, email, password) {
+    // Registro real contra el BFF. G2 devuelve token + user, asi que
+    // dejamos la sesion iniciada de una (mismo shape que login).
+    const data = await bffFetch('/v1/auth/register', {
+      method: 'POST',
+      body: { name, email, password },
+    });
+    return {
+      email,
+      name: data.user?.name || name,
+      token: data.accessToken,
+    };
+  }
 }
