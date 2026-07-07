@@ -8,6 +8,7 @@ import ProductPage from './pages/ProductPage';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import NotFound from './pages/NotFound';
+import AyudaPostventa from './pages/AyudaPostventa';
 
 import { AuthProvider, useAuth } from './adapters/hooks/useAuth.jsx';
 import { CartProvider } from './adapters/hooks/useCart.jsx';
@@ -29,8 +30,6 @@ function LoginPage() {
   return <Login onLogin={login} onLoginSuccess={handleLoginSuccess} />;
 }
 
-// Protege /tienda - si no hay sesion, redirige al landing (/), que es el
-// punto de entrada por defecto para quien no ha iniciado sesion.
 function RequireAuth({ children }) {
   const { isLoggedIn } = useAuth();
   return isLoggedIn ? children : <Navigate to="/" replace />;
@@ -44,6 +43,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
+
             <Route
               path="/tienda"
               element={
@@ -52,9 +52,10 @@ export default function App() {
                 </RequireAuth>
               }
             />
-            <Route path="/productos/:id" element={<ProductPage />} />
 
-            {/* Admin: rutas separadas, sin link visible desde la tienda principal */}
+            <Route path="/productos/:id" element={<ProductPage />} />
+            <Route path="/ayuda-postventa" element={<AyudaPostventa />} />
+
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
