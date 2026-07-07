@@ -26,9 +26,10 @@ export default function LandingPage() {
 
   const fmt = (n) => '$' + n.toLocaleString('es-CL');
 
-  // Action helper to prompt login when clicking private actions
-  const handleAction = () => {
-    navigate('/login');
+  // La tienda es publica: explorar el catalogo y armar el carrito NO requieren
+  // sesion. Los CTA del landing llevan a la tienda; solo pagar pedira login.
+  const goToStore = () => {
+    navigate('/tienda');
   };
 
   return (
@@ -65,16 +66,16 @@ export default function LandingPage() {
           />
           <div className="relative z-10 max-w-xl flex flex-col justify-center">
             <span className="text-xs font-semibold tracking-widest uppercase mb-3 f_green_text" style={{ marginLeft: '1rem' }}>
-              ✦ Catálogo Público — Inicia sesión para comprar
+              ✦ Catálogo Público — Explora y arma tu carrito
             </span>
             <h1 className="text-3xl md:text-5xl font-extrabold leading-tight mb-4 text-white" style={{ marginLeft: '1rem' }}>
               Compra fácil, rápido y seguro en <span className="f_green_text font-black">MiniMarketPlace</span>
             </h1>
             <p className="text-sm md:text-base mb-6 f_text_muted max-w-md leading-relaxed" style={{ marginLeft: '1rem' }}>
-              Explora las mejores ofertas en tecnología y productos para el hogar. ¡Inicia sesión para gestionar tu carro de compras!
+              Explora las mejores ofertas en tecnología y productos para el hogar. Arma tu carrito sin registrarte; solo necesitas iniciar sesión para pagar.
             </p>
             <div className="flex items-center gap-3">
-              <button className="f_green_btn px-6 py-3 text-sm md:text-base font-bold" style={{ marginLeft: '1rem', padding: '0.5rem' }} onClick={handleAction}>
+              <button className="f_green_btn px-6 py-3 text-sm md:text-base font-bold" style={{ marginLeft: '1rem', padding: '0.5rem' }} onClick={goToStore}>
                 Ver catálogo completo →
               </button>
             </div>
@@ -100,7 +101,7 @@ export default function LandingPage() {
             <h2 className="text-xl font-bold text-white" style={{ padding: '0.5rem' }}>Categorías populares</h2>
             <button
               className="text-sm font-semibold flex items-center gap-1 hover:underline f_green_text bg-transparent border-none cursor-pointer"
-              onClick={handleAction}
+              onClick={goToStore}
               style={{ padding: '0.5rem' }}
             >
               Ver todas <ChevronRight size={14} />
@@ -110,7 +111,7 @@ export default function LandingPage() {
             {categories.map((cat) => (
               <button
                 key={cat.name}
-                onClick={handleAction}
+                onClick={goToStore}
                 className="f_category_card p-5 flex flex-col items-center gap-3 text-center cursor-pointer group"
                 style={{ marginLeft: '1rem', padding: '0.5rem' }}
               >
@@ -134,7 +135,7 @@ export default function LandingPage() {
             <h2 className="text-xl font-bold text-white" style={{ marginLeft: '1rem', padding: '0.5rem' }}>Productos destacados</h2>
             <button 
               className="text-sm font-semibold flex items-center gap-1 hover:underline f_green_text bg-transparent border-none cursor-pointer"
-              onClick={handleAction}
+              onClick={goToStore}
               style={{ padding: '0.5rem' }}
             >
               Ver todos <ChevronRight size={14} />
@@ -154,7 +155,7 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5" style={{ marginLeft: '1rem', padding: '0.5rem' }}>
               {products.slice(0, 3).map((p) => {
                 return (
-                  <div key={p.id} className="f_card_dark flex flex-col justify-between" onClick={handleAction} style={{ cursor: 'pointer', marginLeft: '1rem', padding: '0.5rem' }}>
+                  <div key={p.id} className="f_card_dark flex flex-col justify-between" onClick={() => navigate(`/productos/${p.id}`)} style={{ cursor: 'pointer', marginLeft: '1rem', padding: '0.5rem' }}>
                     <div className="relative overflow-hidden aspect-[4/3] bg-[#0B0F0E] rounded-t-2xl flex items-center justify-center">
                       {p.imageUrl ? (
                         <img
@@ -190,7 +191,7 @@ export default function LandingPage() {
                         </div>
 
                         <button className="f_green_btn w-full py-2.5 text-xs flex items-center justify-center gap-1.5" style={{ padding: '0.5rem' }}>
-                          Iniciar sesión para comprar
+                          Ver producto
                         </button>
                       </div>
                     </div>

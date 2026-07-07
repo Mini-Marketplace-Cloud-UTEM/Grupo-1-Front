@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { fetchProductById, fetchProducts } from '../api';
 import { useCart } from '../adapters/hooks/useCart.jsx';
+import { useFavorites } from '../adapters/hooks/useFavorites.jsx';
 
 export default function ProductPage() {
   const { id } = useParams();
@@ -27,7 +28,7 @@ export default function ProductPage() {
   const [loadingSimilar, setLoadingSimilar] = useState(false);
 
   const [quantity, setQuantity] = useState(1);
-  const [wishlist, setWishlist] = useState(false);
+  const { isFavorite, toggleFavorite } = useFavorites();
 
   const carouselRef = useRef(null);
 
@@ -139,11 +140,12 @@ export default function ProductPage() {
         </div>
         
         <button
-          onClick={() => setWishlist(!wishlist)}
+          onClick={() => toggleFavorite(product)}
           className="flex items-center gap-1.5 hover:text-white transition-colors bg-transparent border-none cursor-pointer"
-        style={{ position: 'relative' }}>
-          <Heart size={16} className={wishlist ? "fill-[#28C064] text-[#28C064]" : ""} />
-          <span className="hidden sm:inline">{wishlist ? 'Favorito' : 'Favoritos'}</span>
+          style={{ position: 'relative' }}
+        >
+          <Heart size={16} className={isFavorite(product.id) ? "fill-[#28C064] text-[#28C064]" : ""} />
+          <span className="hidden sm:inline">{isFavorite(product.id) ? 'Favorito' : 'Favoritos'}</span>
         </button>
       </div>
 
