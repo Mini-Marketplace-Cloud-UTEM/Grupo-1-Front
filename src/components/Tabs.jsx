@@ -27,6 +27,13 @@ export default function Tabs({ activeTab, onTabChange, isLoggedIn }) {
         Carrito
       </div>
       <div
+        className={`tab ${activeTab === 'favorites' ? 'active' : ''}`}
+        onClick={() => onTabChange('favorites')}
+        id="tab-favorites"
+      >
+        Favoritos
+      </div>
+      <div
         className={`tab ${activeTab === 'orders' ? 'active' : ''}`}
         onClick={() => onTabChange('orders')}
         id="tab-orders"

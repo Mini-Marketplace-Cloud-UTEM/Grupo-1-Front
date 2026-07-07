@@ -12,6 +12,7 @@ import Register from './pages/Register';
 
 import { AuthProvider, useAuth } from './adapters/hooks/useAuth.jsx';
 import { CartProvider } from './adapters/hooks/useCart.jsx';
+import { FavoritesProvider } from './adapters/hooks/useFavorites.jsx';
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -42,26 +43,28 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <CartProvider>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/registro" element={<Register />} />
-            <Route
-              path="/tienda"
-              element={
-                <RequireAuth>
-                  <StorePage />
-                </RequireAuth>
-              }
-            />
-            <Route path="/productos/:id" element={<ProductPage />} />
+          <FavoritesProvider>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/registro" element={<Register />} />
+              <Route
+                path="/tienda"
+                element={
+                  <RequireAuth>
+                    <StorePage />
+                  </RequireAuth>
+                }
+              />
+              <Route path="/productos/:id" element={<ProductPage />} />
 
-            {/* Admin: rutas separadas, sin link visible desde la tienda principal */}
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              {/* Admin: rutas separadas, sin link visible desde la tienda principal */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </FavoritesProvider>
         </CartProvider>
       </AuthProvider>
     </BrowserRouter>

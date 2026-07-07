@@ -7,6 +7,7 @@ import Cart from '../components/Cart';
 import Orders from '../components/Orders';
 import Footer from '../components/Footer';
 import LandingTab from '../components/LandingTab';
+import Favorites from '../components/Favorites';
 import { useAuth } from '../adapters/hooks/useAuth.jsx';
 import { useCart } from '../adapters/hooks/useCart.jsx';
 
@@ -112,6 +113,11 @@ export default function StorePage() {
             onClearCart={clearCart}
             onPlaceOrder={placeOrder}
             orderSuccessToken={orderSuccessToken}
+            onGoToCatalog={() => handleGoToCatalogFromLanding('all')}
+          />
+        )}
+        {activeTab === 'favorites' && (
+          <Favorites
             onGoToCatalog={() => handleGoToCatalogFromLanding('all')}
           />
         )}
