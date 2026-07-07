@@ -1,8 +1,7 @@
 import React from 'react';
 
 export default function Tabs({ activeTab, onTabChange, isLoggedIn }) {
-  if (!isLoggedIn) return null;
-
+  // Se muestra siempre: la tienda es publica. Solo "Mis pedidos" pide sesion.
   return (
     <div className="tabs" id="main-tabs">
       <div
@@ -33,13 +32,15 @@ export default function Tabs({ activeTab, onTabChange, isLoggedIn }) {
       >
         Favoritos
       </div>
-      <div
-        className={`tab ${activeTab === 'orders' ? 'active' : ''}`}
-        onClick={() => onTabChange('orders')}
-        id="tab-orders"
-      >
-        Mis pedidos
-      </div>
+      {isLoggedIn && (
+        <div
+          className={`tab ${activeTab === 'orders' ? 'active' : ''}`}
+          onClick={() => onTabChange('orders')}
+          id="tab-orders"
+        >
+          Mis pedidos
+        </div>
+      )}
     </div>
   );
 }

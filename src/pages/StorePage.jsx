@@ -11,12 +11,13 @@ import Favorites from '../components/Favorites';
 import { useAuth } from '../adapters/hooks/useAuth.jsx';
 import { useCart } from '../adapters/hooks/useCart.jsx';
 
-// Tienda principal (catalogo/carro/pedidos). Requiere sesion iniciada -
-// el guard de ruta vive en App.jsx (RequireAuth). El carro/pedidos vienen
-// de CartProvider (Context) para compartir estado con ProductPage.
+// Tienda principal (catalogo/carro/pedidos). Es PUBLICA: un invitado puede
+// ver el catalogo y armar el carrito. Solo pagar ("Generar pedido") y "Mis
+// pedidos" exigen sesion. El carro/pedidos vienen de CartProvider (Context)
+// para compartir estado con ProductPage.
 export default function StorePage() {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, isLoggedIn } = useAuth();
 
   const [activeTab, setActiveTab] = useState('inicio');
   const [catalogCategory, setCatalogCategory] = useState('all');
@@ -69,9 +70,10 @@ export default function StorePage() {
           setActiveTab(tab);
         }}
         onLogout={handleLogout}
+        onLogin={() => navigate('/login')}
         search={search}
         onSearchChange={handleSearchChange}
-        isLoggedIn={true}
+        isLoggedIn={isLoggedIn}
       />
 
       <Tabs
@@ -82,7 +84,7 @@ export default function StorePage() {
           }
           setActiveTab(tab);
         }}
-        isLoggedIn={true}
+        isLoggedIn={isLoggedIn}
       />
 
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -111,7 +113,7 @@ export default function StorePage() {
             onQtyChange={changeQty}
             onRemoveItem={removeItem}
             onClearCart={clearCart}
-            onPlaceOrder={() => navigate('/checkout')}
+            onPlaceOrder={() => navigate(isLoggedIn ? '/checkout' : '/login')}
             orderSuccessToken={orderSuccessToken}
             onGoToCatalog={() => handleGoToCatalogFromLanding('all')}
           />

@@ -32,11 +32,13 @@ function LoginPage() {
   return <Login onLogin={login} onLoginSuccess={handleLoginSuccess} />;
 }
 
-// Protege /tienda - si no hay sesion, redirige al landing (/), que es el
-// punto de entrada por defecto para quien no ha iniciado sesion.
-function RequireAuth({ children }) {
+// Guard para rutas que SI exigen sesion (checkout). Navegar/ver catalogo y
+// armar el carrito NO requieren login: la tienda es publica. Solo pagar pide
+// iniciar sesion, y a un invitado lo mandamos a /login (no al landing) para
+// que pueda continuar la compra tras autenticarse.
+function RequireAuth({ children, redirectTo = '/login' }) {
   const { isLoggedIn } = useAuth();
-  return isLoggedIn ? children : <Navigate to="/" replace />;
+  return isLoggedIn ? children : <Navigate to={redirectTo} replace />;
 }
 
 export default function App() {
@@ -49,14 +51,8 @@ export default function App() {
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/registro" element={<Register />} />
-              <Route
-                path="/tienda"
-                element={
-                  <RequireAuth>
-                    <StorePage />
-                  </RequireAuth>
-                }
-              />
+              {/* Tienda publica: cualquiera puede ver el catalogo y armar el carrito. */}
+              <Route path="/tienda" element={<StorePage />} />
               <Route
                 path="/checkout"
                 element={
