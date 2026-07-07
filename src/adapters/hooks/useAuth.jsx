@@ -1,5 +1,5 @@
 import { createContext, useContext, useState } from 'react';
-import { loginUserUseCase } from '../../config/di.js';
+import { loginUserUseCase, registerUserUseCase } from '../../config/di.js';
 import { setAuthToken } from '../../api.js';
 
 // Context, no solo un hook con useState local - varios componentes
@@ -37,6 +37,25 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const register = async (name, email, password) => {
+    setLoading(true);
+    setErrorMsg('');
+    try {
+      const newUser = await registerUserUseCase.execute(name, email, password);
+      setUser(newUser.name);
+      setToken(newUser.token);
+      setAuthToken(newUser.token); // queda logueado de una
+      setIsLoggedIn(true);
+      setErrorMsg('');
+      return newUser;
+    } catch (err) {
+      setErrorMsg(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const setAuthenticatedUser = (name, jwtToken) => {
     setUser(name);
     setToken(jwtToken);
@@ -61,6 +80,7 @@ export function AuthProvider({ children }) {
     setErrorMsg,
     loading,
     login,
+    register,
     logout,
     setAuthenticatedUser
   };

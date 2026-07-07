@@ -9,6 +9,7 @@ import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import NotFound from './pages/NotFound';
 import AyudaPostventa from './pages/AyudaPostventa';
+import Register from './pages/Register';
 
 import { AuthProvider, useAuth } from './adapters/hooks/useAuth.jsx';
 import { CartProvider } from './adapters/hooks/useCart.jsx';
@@ -43,6 +44,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/registro" element={<Register />} />
 
             <Route
               path="/tienda"
