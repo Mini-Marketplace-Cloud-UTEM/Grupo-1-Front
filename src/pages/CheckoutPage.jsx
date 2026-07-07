@@ -89,12 +89,11 @@ export default function CheckoutPage() {
   });
   const [formErrors, setFormErrors] = useState({});
 
-  // Datos del paso 2: Cotización de Despacho (G6)
-  const [shippingQuote, setShippingQuote] = useState(null);
+  // Datos del paso 2: Despacho (Grupo 6). Sin cotización real todavía: G6 no
+  // está integrado con el BFF, así que solo mantenemos el método "por definir".
   const [loadingQuote, setLoadingQuote] = useState(false);
   const [quoteError, setQuoteError] = useState(null);
   const [selectedMethod, setSelectedMethod] = useState(null);
-  const [isQuoteFallBack, setIsQuoteFallBack] = useState(false);
 
   // Datos del paso 3: Pago (G8)
   const [paymentMethod, setPaymentMethod] = useState('CARD');
@@ -163,72 +162,23 @@ export default function CheckoutPage() {
     fetchShippingQuote();
   };
 
-  // Cotizar Despacho en G6 (Llamado Real con fallback)
-  const fetchShippingQuote = async () => {
-    setLoadingQuote(true);
+  // El cálculo de despacho lo entrega el Servicio de Despacho (Grupo 6).
+  // Todavía NO está integrado con nuestro BFF, y el front NO debe llamar a G6
+  // directamente (rompe la regla "el front solo habla con el BFF"). Por eso
+  // aquí no se cotiza nada real: dejamos claro en la UI que el despacho no
+  // está disponible y el costo queda en $0 (por definir) solo para poder
+  // continuar y demostrar el checkout real de G4. Cuando el BFF exponga
+  // /v1/shipments/quotes (proxy a G6), se conecta acá.
+  const fetchShippingQuote = () => {
+    const pending = {
+      id: 'PENDING',
+      name: 'Despacho por definir',
+      cost: 0,
+      days: 'Pendiente de integración con Grupo 6',
+    };
+    setSelectedMethod(pending);
+    setLoadingQuote(false);
     setQuoteError(null);
-    setIsQuoteFallBack(false);
-
-    const region = CHILE_REGIONS[formData.regionIndex];
-    
-    // Preparar el cuerpo de la cotización según el esquema de G6
-    const packageItems = Object.values(cartState).map(item => ({
-      originCd: region.zone, // El origen del almacén más cercano
-      weightKg: 1.5 * item.qty,
-      dimensionsCm: {
-        length: 20,
-        width: 15,
-        height: 15
-      }
-    }));
-
-    try {
-      const response = await fetch('https://g6-despacho-oficial.onrender.com/api/v1/shipments/quotes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Request-Id': crypto.randomUUID(),
-          'X-Correlation-Id': crypto.randomUUID(),
-          'X-Consumer': 'grupo-1-frontend'
-        },
-        body: JSON.stringify({
-          city: formData.city,
-          packages: packageItems
-        })
-      });
-
-      if (!response.ok) throw new Error('Error al cotizar en el servidor de despacho');
-      const data = await response.json();
-      
-      const baseCost = data.totalShippingCost || 3500;
-      const methods = [
-        { id: 'STANDARD', name: 'Despacho Estándar (G6)', cost: baseCost, days: '3-5 días hábiles' },
-        { id: 'EXPRESS', name: 'Despacho Express (G6)', cost: Math.round(baseCost * 1.5), days: '24 horas' },
-        { id: 'PICKUP', name: 'Retiro en Tienda UTEM', cost: 0, days: 'Disponible en 2 horas' }
-      ];
-      setShippingQuote(methods);
-      setSelectedMethod(methods[0]);
-    } catch (err) {
-      console.warn('Falla de red/CORS en G6 Despacho, utilizando fallback de contingencia.', err);
-      
-      // Fallback robusto local basado en la zona
-      let baseCost = 3500; // Centro
-      if (region.zone === 'NORTE') baseCost = 6500;
-      else if (region.zone === 'SUR') baseCost = 7500;
-      if (formData.city === 'Punta Arenas') baseCost = 10500; // Extremo Sur
-
-      const fallbackMethods = [
-        { id: 'STANDARD', name: 'Despacho Estándar (Fallback local)', cost: baseCost, days: '3-5 días hábiles' },
-        { id: 'EXPRESS', name: 'Despacho Express (Fallback local)', cost: Math.round(baseCost * 1.5), days: '24-48 horas' },
-        { id: 'PICKUP', name: 'Retiro en Tienda UTEM', cost: 0, days: 'Gratis' }
-      ];
-
-      setShippingQuote(fallbackMethods);
-      setSelectedMethod(fallbackMethods[0]);
-      setIsQuoteFallBack(true);
-    } finally {
-      setLoadingQuote(false);
-    }
   };
 
   // Confirmar Paso 2 (Despacho) e ir a Paso 3 (Pago)
@@ -463,7 +413,7 @@ export default function CheckoutPage() {
                 <i className="ti ti-truck" style={{ color: 'var(--color-primary)' }}></i> Método de Envío
               </h2>
               <p style={{ color: 'var(--color-text-secondary)', fontSize: '12px', marginBottom: '20px' }}>
-                Tarifas obtenidas en tiempo real desde el <strong>Servicio de Logística de Grupo 6</strong> para {formData.city}.
+                El despacho lo calcula el <strong>Servicio de Despacho (Grupo 6)</strong>, que todavía no está integrado con nuestro BFF.
               </p>
 
               {loadingQuote ? (
@@ -479,61 +429,25 @@ export default function CheckoutPage() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   
-                  {isQuoteFallBack && (
-                    <div style={{
-                      padding: '10px 14px',
-                      background: 'rgba(217, 119, 6, 0.1)',
-                      border: '0.5px solid rgba(217, 119, 6, 0.3)',
-                      borderRadius: 'var(--border-radius-md)',
-                      fontSize: '11px',
-                      color: '#fbbf24',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px'
-                    }}>
-                      <i className="ti ti-alert-circle"></i>
-                      <span>Servicio de Grupo 6 offline. Utilizando cálculo de tarifas de contingencia local.</span>
-                    </div>
-                  )}
-
-                  {shippingQuote?.map((method) => (
-                    <div
-                      key={method.id}
-                      onClick={() => setSelectedMethod(method)}
-                      style={{
-                        padding: '16px',
-                        borderRadius: 'var(--border-radius-md)',
-                        background: 'var(--color-background-secondary)',
-                        border: `1px solid ${selectedMethod?.id === method.id ? 'var(--color-primary)' : 'var(--color-border-primary)'}`,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{
-                          width: '18px',
-                          height: '18px',
-                          borderRadius: '50%',
-                          border: `2px solid ${selectedMethod?.id === method.id ? 'var(--color-primary)' : 'var(--color-text-secondary)'}`,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}>
-                          {selectedMethod?.id === method.id && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--color-primary)' }} />}
-                        </div>
-                        <div>
-                          <p style={{ fontWeight: 600, fontSize: '13px' }}>{method.name}</p>
-                          <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>{method.days}</span>
-                        </div>
-                      </div>
-                      <span style={{ fontWeight: 'bold', fontSize: '14px', color: method.cost === 0 ? 'var(--color-primary)' : '#fff' }}>
-                        {method.cost === 0 ? 'Gratis' : fmt(method.cost)}
-                      </span>
-                    </div>
-                  ))}
+                  <div style={{
+                    padding: '14px 16px',
+                    background: 'rgba(217, 119, 6, 0.1)',
+                    border: '0.5px solid rgba(217, 119, 6, 0.3)',
+                    borderRadius: 'var(--border-radius-md)',
+                    fontSize: '12px',
+                    color: '#fbbf24',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '10px',
+                    lineHeight: 1.5
+                  }}>
+                    <i className="ti ti-alert-triangle" style={{ marginTop: '2px' }}></i>
+                    <span>
+                      La cotización de despacho la entrega el <strong>Servicio de Despacho (Grupo 6)</strong>,
+                      que todavía <strong>no está integrado</strong> con nuestro BFF. Por ahora no hay
+                      tarifas disponibles y el costo de envío queda en <strong>$0 (por definir)</strong>.
+                    </span>
+                  </div>
 
                   <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
                     <button className="btn" onClick={() => setStep('address')} style={{ flex: 1, padding: '12px' }}>
@@ -555,7 +469,7 @@ export default function CheckoutPage() {
                 <i className="ti ti-credit-card" style={{ color: 'var(--color-primary)' }}></i> Método de Pago
               </h2>
               <p style={{ color: 'var(--color-text-secondary)', fontSize: '12px', marginBottom: '20px' }}>
-                Simulación segura de pasarela integrada con el <strong>Servicio de Pagos de Grupo 8</strong>.
+                Pago <strong>simulado localmente</strong> (no se cobra). La pasarela real la implementa el <strong>Servicio de Pagos (Grupo 8)</strong> y aún no está integrada.
               </p>
 
               <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
@@ -757,7 +671,7 @@ export default function CheckoutPage() {
                   <p>{formData.fullName} ({formData.rut})</p>
                 </div>
                 <div style={{ borderTop: '0.5px solid var(--color-border-primary)', paddingTop: '8px', marginTop: '4px' }}>
-                  <span style={{ color: 'var(--color-text-secondary)', fontSize: '11px' }}>Monto total pagado (G8):</span>
+                  <span style={{ color: 'var(--color-text-secondary)', fontSize: '11px' }}>Monto total (pago simulado):</span>
                   <p style={{ fontWeight: 600 }}>{fmt(cartTotal + selectedMethod?.cost)}</p>
                 </div>
               </div>
@@ -805,8 +719,12 @@ export default function CheckoutPage() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: 'var(--color-text-secondary)' }}>Despacho</span>
-                <span style={{ color: selectedMethod ? '#fff' : 'var(--color-text-secondary)' }}>
-                  {selectedMethod ? (selectedMethod.cost === 0 ? 'Gratis' : fmt(selectedMethod.cost)) : 'Calculándose...'}
+                <span style={{ color: 'var(--color-text-secondary)' }}>
+                  {selectedMethod?.id === 'PENDING'
+                    ? 'Por definir'
+                    : selectedMethod
+                      ? (selectedMethod.cost === 0 ? 'Gratis' : fmt(selectedMethod.cost))
+                      : 'Por definir'}
                 </span>
               </div>
               
