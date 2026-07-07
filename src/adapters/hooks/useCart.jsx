@@ -1,4 +1,4 @@
-import { createContext, useContext, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import {
   createCart,
   getCart,
@@ -13,6 +13,11 @@ import {
 // El carro real vive en Grupo 4; aca guardamos su estado normalizado que
 // entrega el BFF y lo exponemos con la forma que ya esperan los componentes.
 const CartContext = createContext(null);
+
+// El carro vive en Grupo 4 y se identifica por su id. Persistimos ESE id en
+// localStorage para recuperar el mismo carro tras un refresco de pagina (G4
+// no asocia el carro al usuario, asi que la referencia la mantenemos aca).
+const CART_ID_KEY = 'cartId';
 
 // Pedidos de demostracion del mockup - el flujo real de pedidos (G5) todavia
 // no se cablea aca, se mantienen como estaban.
@@ -67,15 +72,38 @@ export function CartProvider({ children }) {
   const [orders, setOrders] = useState(DEMO_ORDERS);
   const [orderSuccessToken, setOrderSuccessToken] = useState('');
   // Id sincrono para no crear dos carritos si el usuario agrega rapido dos
-  // productos antes de que el estado de React se actualice.
-  const cartIdRef = useRef(null);
+  // productos antes de que el estado de React se actualice. Arranca con el id
+  // persistido (si lo hay) para recuperar el carro tras un refresco.
+  const cartIdRef = useRef(localStorage.getItem(CART_ID_KEY) || null);
 
   const cartState = toCartState(cartData);
+
+  // Al montar, si hay un carro guardado, lo recupera desde G4 (via BFF) para
+  // que sobreviva al refresco. Si ya no existe (expiro / se limpio), soltamos
+  // la referencia en silencio en vez de romper la vista.
+  useEffect(() => {
+    const savedId = cartIdRef.current;
+    if (!savedId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await getCart(savedId);
+        if (!cancelled) setCartData(data);
+      } catch {
+        if (!cancelled) {
+          cartIdRef.current = null;
+          localStorage.removeItem(CART_ID_KEY);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const ensureCart = async () => {
     if (cartIdRef.current) return cartIdRef.current;
     const created = await createCart();
     cartIdRef.current = created.id;
+    localStorage.setItem(CART_ID_KEY, created.id);
     setCartData(created);
     return created.id;
   };
@@ -126,6 +154,7 @@ export function CartProvider({ children }) {
   // cerrar sesion y tras generar el pedido). El carro en G4 queda huerfano.
   const clearCart = () => {
     cartIdRef.current = null;
+    localStorage.removeItem(CART_ID_KEY);
     setCartData(null);
     setCartError('');
   };
