@@ -130,17 +130,38 @@ export function CartProvider({ children }) {
     setCartError('');
   };
 
-  const placeOrder = async () => {
-    if (!cartIdRef.current || (cartData?.totalItems || 0) === 0) return;
+  const placeOrder = async (shippingDetails = null, shippingCost = 0) => {
+    if (!cartIdRef.current || (cartData?.totalItems || 0) === 0) return null;
     try {
       const result = await checkout(cartIdRef.current);
-      setOrderSuccessToken(result?.checkoutId || result?.orderId || result?.id || cartIdRef.current);
+      const orderId = result?.orderId || result?.checkoutId || result?.id || `ORD-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(100 + Math.random() * 900)}`;
+      
+      // Crear pedido para el historial local
+      const newOrder = {
+        id: orderId,
+        date: new Date().toLocaleDateString('es-CL'),
+        status: 'pending',
+        items: Object.values(toCartState(cartData)).map(x => ({
+          name: x.product.name,
+          qty: x.qty,
+          price: x.product.price
+        })),
+        total: (cartData?.totalPrice || 0) + shippingCost,
+        shippingAddress: shippingDetails ? `${shippingDetails.address}, ${shippingDetails.city}` : 'No especificada',
+        shippingCost: shippingCost
+      };
+
+      setOrders(prev => [newOrder, ...prev]);
+      setOrderSuccessToken(orderId);
+      
       setTimeout(() => {
         clearCart();
         setOrderSuccessToken('');
-      }, 1600);
+      }, 5000); // Dar suficiente tiempo para la UI de éxito
+      
+      return { success: true, orderId, order: newOrder };
     } catch (err) {
-      alert('Error al generar pedido: ' + err.message);
+      throw new Error(err.message || 'Error al procesar el checkout');
     }
   };
 

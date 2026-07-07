@@ -9,6 +9,7 @@ import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import NotFound from './pages/NotFound';
 import Register from './pages/Register';
+import CheckoutPage from './pages/CheckoutPage';
 
 import { AuthProvider, useAuth } from './adapters/hooks/useAuth.jsx';
 import { CartProvider } from './adapters/hooks/useCart.jsx';
@@ -53,6 +54,14 @@ export default function App() {
                 element={
                   <RequireAuth>
                     <StorePage />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/checkout"
+                element={
+                  <RequireAuth>
+                    <CheckoutPage />
                   </RequireAuth>
                 }
               />

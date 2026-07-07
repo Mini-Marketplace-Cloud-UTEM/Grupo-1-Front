@@ -111,7 +111,7 @@ export default function StorePage() {
             onQtyChange={changeQty}
             onRemoveItem={removeItem}
             onClearCart={clearCart}
-            onPlaceOrder={placeOrder}
+            onPlaceOrder={() => navigate('/checkout')}
             orderSuccessToken={orderSuccessToken}
             onGoToCatalog={() => handleGoToCatalogFromLanding('all')}
           />
