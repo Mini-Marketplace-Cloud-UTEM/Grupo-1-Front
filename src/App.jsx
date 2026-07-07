@@ -10,6 +10,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import NotFound from './pages/NotFound';
 import Register from './pages/Register';
 import CheckoutPage from './pages/CheckoutPage';
+import AyudaPostventa from './pages/AyudaPostventa';
 
 import { AuthProvider, useAuth } from './adapters/hooks/useAuth.jsx';
 import { CartProvider } from './adapters/hooks/useCart.jsx';
@@ -62,6 +63,9 @@ export default function App() {
                 }
               />
               <Route path="/productos/:id" element={<ProductPage />} />
+
+              {/* Ayuda / Postventa: pagina estatica publica (aporte de Reynazo). */}
+              <Route path="/ayuda-postventa" element={<AyudaPostventa />} />
 
               {/* Admin: rutas separadas, sin link visible desde la tienda principal */}
               <Route path="/admin/login" element={<AdminLogin />} />

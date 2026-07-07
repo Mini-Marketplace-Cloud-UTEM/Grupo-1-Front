@@ -49,7 +49,10 @@ export default function LandingPage() {
           </span>
         </div>
         
-        <div className="nav-actions">
+        <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Link className="btn" to="/ayuda-postventa" style={{ background: 'transparent', color: '#FFFFFF', border: '1px solid #22C55E', fontWeight: 'bold' }}>
+            Ayuda y soporte
+          </Link>
           <Link className="btn btn-primary" to="/login" style={{ background: '#22C55E', color: '#0B0F0E', borderColor: '#22C55E', fontWeight: 'bold' }}>
             Iniciar sesión
           </Link>
