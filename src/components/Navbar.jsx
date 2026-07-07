@@ -5,6 +5,7 @@ export default function Navbar({
   cartCount,
   onTabChange,
   onLogout,
+  onLogin,
   search,
   onSearchChange,
   isLoggedIn
@@ -21,31 +22,35 @@ export default function Navbar({
           Mini<span style={{ color: 'var(--color-primary)' }}>MarketPlace</span>
         </span>
       </div>
-      {isLoggedIn && (
-        <div className="nav-search" id="nav-search-wrap">
-          <i className="ti ti-search" aria-hidden="true"></i>
-          <input
-            type="text"
-            placeholder="Buscar productos..."
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-          />
-        </div>
-      )}
+      {/* Buscador visible siempre: un invitado tambien puede buscar en el catalogo. */}
+      <div className="nav-search" id="nav-search-wrap">
+        <i className="ti ti-search" aria-hidden="true"></i>
+        <input
+          type="text"
+          placeholder="Buscar productos..."
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+        />
+      </div>
       <div className="nav-actions">
-        {isLoggedIn && (
+        {/* El carrito existe con o sin sesion (el invitado tambien arma su carro). */}
+        <button className="btn btn-ghost cart-btn" onClick={() => onTabChange('cart')}>
+          <i className="ti ti-shopping-cart" aria-hidden="true"></i>
+          <span className="cart-count">{cartCount}</span>
+        </button>
+        {isLoggedIn ? (
           <>
             <span id="user-label" style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
               {user}
             </span>
-            <button className="btn btn-ghost cart-btn" onClick={() => onTabChange('cart')}>
-              <i className="ti ti-shopping-cart" aria-hidden="true"></i>
-              <span className="cart-count">{cartCount}</span>
-            </button>
             <button className="btn btn-sm" onClick={onLogout}>
               Cerrar sesión
             </button>
           </>
+        ) : (
+          <button className="btn btn-sm btn-primary" onClick={onLogin}>
+            Iniciar sesión
+          </button>
         )}
       </div>
     </nav>

@@ -1,18 +1,20 @@
 import React from 'react';
 import {
-  Zap,
   ChevronRight,
   Truck,
   Shield,
   CreditCard,
   Package,
-  ShoppingCart
+  ShoppingCart,
+  Heart
 } from 'lucide-react';
 import { useCatalog } from '../adapters/hooks/useCatalog.js';
+import { useFavorites } from '../adapters/hooks/useFavorites.jsx';
 
 export default function LandingTab({ onGoToCatalog, onAddToCart, cart }) {
   // Fetch real catalog products from BFF to show in "Productos Destacados"
   const { products, loading, error } = useCatalog('', 1);
+  const { isFavorite, toggleFavorite } = useFavorites();
 
   // Categories list mapped to existing categories with mockup details
   const categories = [
@@ -142,9 +144,32 @@ export default function LandingTab({ onGoToCatalog, onAddToCart, cart }) {
                         }}
                       />
                     ) : null}
-                    <div className="product-img-placeholder flex items-center justify-center text-4xl" style={{ display: p.imageUrl ? 'none' : 'flex', width: '100%', height: '100%' }}>
+                    <div className="product-img-placeholder" style={{ display: p.imageUrl ? 'none' : 'flex', width: '100%', height: '100%' }}>
                       📦
                     </div>
+                    <button
+                      onClick={() => toggleFavorite(p)}
+                      title={isFavorite(p.id) ? "Quitar de favoritos" : "Agregar a favoritos"}
+                      style={{
+                        position: 'absolute',
+                        top: '12px',
+                        right: '12px',
+                        background: 'rgba(11, 15, 14, 0.7)',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '32px',
+                        height: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        color: isFavorite(p.id) ? '#22C55E' : '#FFF',
+                        transition: 'all 0.2s',
+                        zIndex: 2
+                      }}
+                    >
+                      <Heart size={16} fill={isFavorite(p.id) ? '#22C55E' : 'none'} />
+                    </button>
                     <div className="absolute top-3 left-3 flex flex-col gap-1.5">
                       <span style={{ padding: '0.5rem' }} className="text-[10px] font-bold px-2.5 py-0.5 rounded-full f_badge_primary">
                         Destacado

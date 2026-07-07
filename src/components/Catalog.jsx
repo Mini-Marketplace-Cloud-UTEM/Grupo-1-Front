@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCatalog } from '../adapters/hooks/useCatalog.js';
+import { useFavorites } from '../adapters/hooks/useFavorites.jsx';
 
 export default function Catalog({ search, cart, onAddToCart, page, onPageChange, initialCategory = 'all' }) {
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
@@ -8,6 +9,7 @@ export default function Catalog({ search, cart, onAddToCart, page, onPageChange,
   const [maxPrice, setMaxPrice] = useState(1000000);
 
   const { products, pagination, loading, error, retry } = useCatalog(search, page);
+  const { isFavorite, toggleFavorite } = useFavorites();
 
   const fmt = (n) => '$' + n.toLocaleString('es-CL');
 
@@ -133,23 +135,48 @@ export default function Catalog({ search, cart, onAddToCart, page, onPageChange,
               const inCart = cart[p.id]?.qty || 0;
 
               return (
-                <div key={p.id} className="product-card">
-                  <Link to={`/productos/${p.id}`} className="product-img">
-                    {p.imageUrl ? (
-                      <img
-                        src={p.imageUrl}
-                        alt={p.name}
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          const placeholder = e.currentTarget.nextSibling;
-                          if (placeholder) placeholder.style.display = 'flex';
-                        }}
-                      />
-                    ) : null}
-                    <div className="product-img-placeholder" style={{ display: p.imageUrl ? 'none' : 'flex' }}>
-                      📦
-                    </div>
-                  </Link>
+                <div key={p.id} className="product-card" style={{ position: 'relative' }}>
+                  <div style={{ position: 'relative' }}>
+                    <Link to={`/productos/${p.id}`} className="product-img">
+                      {p.imageUrl ? (
+                        <img
+                          src={p.imageUrl}
+                          alt={p.name}
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const placeholder = e.currentTarget.nextSibling;
+                            if (placeholder) placeholder.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div className="product-img-placeholder" style={{ display: p.imageUrl ? 'none' : 'flex' }}>
+                        📦
+                      </div>
+                    </Link>
+                    <button
+                      onClick={() => toggleFavorite(p)}
+                      title={isFavorite(p.id) ? "Quitar de favoritos" : "Agregar a favoritos"}
+                      style={{
+                        position: 'absolute',
+                        top: '10px',
+                        right: '10px',
+                        background: 'rgba(11, 15, 14, 0.7)',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '32px',
+                        height: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        color: isFavorite(p.id) ? '#28C064' : '#FFF',
+                        transition: 'all 0.2s',
+                        zIndex: 2
+                      }}
+                    >
+                      <i className={isFavorite(p.id) ? "ti ti-heart-filled" : "ti ti-heart"} style={{ fontSize: '18px' }}></i>
+                    </button>
+                  </div>
                   <div className="product-info">
                     <p className="product-cat">{p.category}</p>
                     <Link to={`/productos/${p.id}`} className="product-name" title={p.name} style={{ textDecoration: 'none', color: 'inherit' }}>
