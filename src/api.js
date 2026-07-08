@@ -111,3 +111,79 @@ export async function removeCartItem(cartId, itemId) {
 export async function checkout(cartId) {
   return bffFetch('/v1/checkout', { method: 'POST', auth: true, body: { cartId } });
 }
+
+// ── Catalogo publico extra ──
+export async function fetchCategories() {
+  return bffFetch('/v1/categories');
+}
+
+// ── Panel admin (BFF exige rol admin: 401 sin sesion, 403 sin el rol). ──
+export async function adminCreateProduct(data, idempotencyKey) {
+  return bffFetch('/v1/admin/products', {
+    method: 'POST',
+    auth: true,
+    body: data,
+    headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
+  });
+}
+
+export async function adminUpdateProduct(id, data) {
+  return bffFetch(`/v1/admin/products/${id}`, { method: 'PUT', auth: true, body: data });
+}
+
+export async function adminDeleteProduct(id) {
+  return bffFetch(`/v1/admin/products/${id}`, { method: 'DELETE', auth: true });
+}
+
+export async function adminFetchInventory(productId) {
+  return bffFetch(`/v1/admin/inventory/${productId}`, { auth: true });
+}
+
+export async function adminFetchUsers() {
+  return bffFetch('/v1/admin/users', { auth: true });
+}
+
+export async function adminDeleteUser(id) {
+  return bffFetch(`/v1/admin/users/${id}`, { method: 'DELETE', auth: true });
+}
+
+// ── Reportes (BFF -> Grupo 7). Cold start de Railway/Render: timeout amplio. ──
+const REPORT_TIMEOUT_MS = 20000;
+
+export async function fetchSalesReport({ from, to } = {}) {
+  const params = new URLSearchParams();
+  if (from) params.set('from', from);
+  if (to) params.set('to', to);
+  const qs = params.toString();
+  return bffFetch(`/v1/admin/reports/sales${qs ? `?${qs}` : ''}`, {
+    auth: true,
+    timeout: REPORT_TIMEOUT_MS,
+  });
+}
+
+export async function fetchOrdersByStatus() {
+  return bffFetch('/v1/admin/reports/orders-by-status', { auth: true, timeout: REPORT_TIMEOUT_MS });
+}
+
+export async function fetchTopProducts({ page = 1, pageSize = 10 } = {}) {
+  const params = new URLSearchParams({ page, pageSize });
+  return bffFetch(`/v1/admin/reports/top-products?${params}`, {
+    auth: true,
+    timeout: REPORT_TIMEOUT_MS,
+  });
+}
+
+export async function fetchAverageTicket() {
+  return bffFetch('/v1/admin/reports/average-ticket', { auth: true, timeout: REPORT_TIMEOUT_MS });
+}
+
+export async function fetchPeakHours() {
+  return bffFetch('/v1/admin/reports/peak-hours', { auth: true, timeout: REPORT_TIMEOUT_MS });
+}
+
+export async function fetchDeliveryPerformance() {
+  return bffFetch('/v1/admin/reports/delivery-performance', {
+    auth: true,
+    timeout: REPORT_TIMEOUT_MS,
+  });
+}

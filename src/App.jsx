@@ -42,6 +42,16 @@ function RequireAuth({ children, redirectTo = '/login' }) {
   return isLoggedIn ? children : <Navigate to={redirectTo} replace />;
 }
 
+// Guard del panel admin: ademas de sesion exige el rol admin (viene en el
+// JWT de G2 via login y persiste en localStorage). Un customer logueado
+// tambien rebota a /admin/login, donde vera el error de permisos si intenta
+// entrar con esa cuenta. La proteccion real esta en el BFF (require_admin);
+// esto solo evita mostrar un panel que no va a poder cargar nada.
+function RequireAdmin({ children }) {
+  const { isLoggedIn, isAdmin } = useAuth();
+  return isLoggedIn && isAdmin ? children : <Navigate to="/admin/login" replace />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -69,7 +79,14 @@ export default function App() {
 
               {/* Admin: rutas separadas, sin link visible desde la tienda principal */}
               <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route
+                path="/admin/dashboard"
+                element={
+                  <RequireAdmin>
+                    <AdminDashboard />
+                  </RequireAdmin>
+                }
+              />
 
               <Route path="*" element={<NotFound />} />
             </Routes>
