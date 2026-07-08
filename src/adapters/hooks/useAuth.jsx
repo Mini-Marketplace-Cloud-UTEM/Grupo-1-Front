@@ -18,7 +18,13 @@ function loadPersistedSession() {
     const raw = localStorage.getItem(AUTH_STORAGE_KEY);
     if (!raw) return { token: null, user: null };
     const parsed = JSON.parse(raw);
-    return { token: parsed.token || null, user: parsed.user || null };
+    let user = parsed.user || null;
+    // Sesiones guardadas antes de introducir roles tienen user como string
+    // (solo el nombre). Se normalizan al objeto actual con roles vacios para
+    // no romper la sesion existente tras el deploy (re-loguear la restaura
+    // completa, con roles).
+    if (typeof user === 'string') user = { name: user, roles: [] };
+    return { token: parsed.token || null, user };
   } catch {
     return { token: null, user: null };
   }
@@ -58,10 +64,16 @@ export function AuthProvider({ children }) {
     setErrorMsg('');
     try {
       const loggedUser = await loginUserUseCase.execute(email, password);
-      setUser(loggedUser.name);
+      const userData = {
+        id: loggedUser.id,
+        name: loggedUser.name,
+        email: loggedUser.email,
+        roles: loggedUser.roles || [],
+      };
+      setUser(userData);
       setToken(loggedUser.token);
       setAuthToken(loggedUser.token); // que bffFetch pueda adjuntar el Bearer
-      persistSession(loggedUser.token, loggedUser.name); // sobrevive al refresh
+      persistSession(loggedUser.token, userData); // sobrevive al refresh
       setIsLoggedIn(true);
       setErrorMsg('');
       return loggedUser;
@@ -81,10 +93,16 @@ export function AuthProvider({ children }) {
     setErrorMsg('');
     try {
       const newUser = await registerUserUseCase.execute(name, email, password);
-      setUser(newUser.name);
+      const userData = {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        roles: newUser.roles || [],
+      };
+      setUser(userData);
       setToken(newUser.token);
       setAuthToken(newUser.token); // queda logueado de una
-      persistSession(newUser.token, newUser.name); // sobrevive al refresh
+      persistSession(newUser.token, userData); // sobrevive al refresh
       setIsLoggedIn(true);
       setErrorMsg('');
       return newUser;
@@ -96,11 +114,12 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const setAuthenticatedUser = (name, jwtToken) => {
-    setUser(name);
+  const setAuthenticatedUser = (userData, jwtToken) => {
+    const normalized = typeof userData === 'string' ? { name: userData, roles: [] } : userData;
+    setUser(normalized);
     setToken(jwtToken);
     setAuthToken(jwtToken);
-    persistSession(jwtToken, name);
+    persistSession(jwtToken, normalized);
     setIsLoggedIn(true);
     setErrorMsg('');
   };
@@ -114,10 +133,14 @@ export function AuthProvider({ children }) {
     setErrorMsg('');
   };
 
+  // user es un objeto {id, name, email, roles} (antes era solo el nombre).
+  const isAdmin = Array.isArray(user?.roles) && user.roles.includes('admin');
+
   const value = {
     isLoggedIn,
     token,
     user,
+    isAdmin,
     errorMsg,
     setErrorMsg,
     loading,
