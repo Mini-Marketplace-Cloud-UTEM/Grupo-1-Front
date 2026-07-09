@@ -1,0 +1,366 @@
+/* Panel de administración. Reutiliza los tokens globales de src/index.css
+   (paleta zinc oscura + verde). Prefijo admin-* para no chocar con las
+   clases de la tienda. */
+
+.admin-page {
+  min-height: 100vh;
+  background: var(--color-background-tertiary);
+  color: var(--color-text-primary);
+}
+
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 24px;
+  background: var(--color-background-primary);
+  border-bottom: 0.5px solid var(--color-border-primary);
+  flex-wrap: wrap;
+}
+
+.admin-header h1 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.admin-header-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 12px 24px 0;
+  border-bottom: 0.5px solid var(--color-border-secondary);
+}
+
+.admin-tab {
+  padding: 10px 18px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.admin-tab:hover {
+  color: var(--color-text-primary);
+}
+
+.admin-tab.active {
+  color: var(--color-text-primary);
+  border-bottom-color: var(--color-primary);
+  font-weight: 600;
+}
+
+.admin-section {
+  padding: 20px 24px 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.admin-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.admin-section-head h2 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.admin-toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.admin-search {
+  padding: 8px 12px;
+  border: 0.5px solid var(--color-border-primary);
+  border-radius: var(--border-radius-md);
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  min-width: 220px;
+}
+
+/* ── Tablas ── */
+
+.admin-table-wrap {
+  overflow-x: auto;
+  border: 0.5px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-lg);
+  background: var(--color-background-primary);
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.admin-table th {
+  text-align: left;
+  padding: 10px 14px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  border-bottom: 0.5px solid var(--color-border-primary);
+  white-space: nowrap;
+}
+
+.admin-table td {
+  padding: 10px 14px;
+  border-bottom: 0.5px solid var(--color-border-secondary);
+  vertical-align: middle;
+}
+
+.admin-table tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-table .admin-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.admin-empty,
+.admin-loading {
+  padding: 32px;
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+/* ── Badges de estado / roles ── */
+
+.admin-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 0.5px solid var(--color-border-primary);
+  color: var(--color-text-secondary);
+}
+
+.admin-badge.active {
+  background: var(--color-background-success);
+  border-color: var(--color-border-success);
+  color: var(--color-text-success);
+}
+
+.admin-badge.inactive {
+  background: var(--color-background-danger);
+  border-color: var(--color-border-danger);
+  color: var(--color-text-danger);
+}
+
+.admin-badge.role-admin {
+  background: var(--color-background-success);
+  border-color: var(--color-border-success);
+  color: var(--color-text-success);
+}
+
+/* ── Formulario de producto ── */
+
+.admin-form-card {
+  background: var(--color-background-primary);
+  border: 0.5px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-lg);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.admin-form-card h3 {
+  margin: 0 0 16px;
+  font-size: 15px;
+}
+
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px 16px;
+}
+
+.admin-form-grid .form-group {
+  margin: 0;
+}
+
+.admin-form-grid .full {
+  grid-column: 1 / -1;
+}
+
+.admin-form-footer {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  align-items: center;
+}
+
+.admin-form-hint {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+/* ── Inventario por fila ── */
+
+.admin-inventory-row td {
+  background: var(--color-background-secondary);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+/* ── Estadísticas: tiles ── */
+
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.admin-stat-tile {
+  background: var(--color-background-primary);
+  border: 0.5px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-lg);
+  padding: 16px;
+}
+
+.admin-stat-label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+}
+
+.admin-stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: 1.2;
+}
+
+.admin-stat-sub {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+}
+
+/* ── Estadísticas: cards con visualizaciones ── */
+
+.admin-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+.admin-chart-card {
+  background: var(--color-background-primary);
+  border: 0.5px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-lg);
+  padding: 16px;
+  min-width: 0;
+}
+
+.admin-chart-card h3 {
+  margin: 0 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.admin-chart-error {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  padding: 12px 0;
+}
+
+/* Barras horizontales (una sola serie). El fill usa el paso del verde que
+   pasa la banda de luminosidad y contraste sobre zinc 900 (validado con
+   el script de dataviz): coincide con --color-primary-hover. Los textos
+   van SIEMPRE en tokens de texto, nunca en el color de la serie. */
+.admin-bar-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 48px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.admin-bar-label {
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-bar-track {
+  height: 10px;
+  display: flex;
+}
+
+.admin-bar-fill {
+  background: var(--color-primary-hover);
+  border-radius: 0 4px 4px 0;
+  min-width: 2px;
+  height: 100%;
+}
+
+.admin-bar-value {
+  color: var(--color-text-primary);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Columnas por hora (0-23, una sola serie). */
+.admin-hours {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 120px;
+  border-bottom: 0.5px solid var(--color-border-primary);
+}
+
+.admin-hour-col {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+}
+
+.admin-hour-fill {
+  width: 100%;
+  background: var(--color-primary-hover);
+  border-radius: 3px 3px 0 0;
+  min-height: 2px;
+}
+
+.admin-hours-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+}
+
+@media (max-width: 640px) {
+  .admin-header,
+  .admin-tabs,
+  .admin-section {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}

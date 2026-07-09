@@ -61,7 +61,7 @@ export default function StorePage() {
   return (
     <div className="app">
       <Navbar
-        user={user}
+        user={user?.name}
         cartCount={cartCount}
         onTabChange={(tab) => {
           if (tab !== 'catalog') {

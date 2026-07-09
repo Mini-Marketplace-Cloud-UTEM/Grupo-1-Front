@@ -80,7 +80,7 @@ export default function CheckoutPage() {
   
   // Datos del paso 1: Dirección y RUT
   const [formData, setFormData] = useState({
-    fullName: user || '',
+    fullName: user?.name || '',
     rut: '',
     phone: '',
     address: '',
