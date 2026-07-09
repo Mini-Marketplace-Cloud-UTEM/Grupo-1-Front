@@ -9,8 +9,10 @@ export class ApiAuthService extends IAuthService {
       body: { email, password },
     });
     return {
+      id: data.user?.id,
       email,
       name: data.user?.name || email,
+      roles: data.user?.roles || [],
       token: data.accessToken,
     };
   }
@@ -23,8 +25,10 @@ export class ApiAuthService extends IAuthService {
       body: { name, email, password },
     });
     return {
+      id: data.user?.id,
       email,
       name: data.user?.name || name,
+      roles: data.user?.roles || [],
       token: data.accessToken,
     };
   }

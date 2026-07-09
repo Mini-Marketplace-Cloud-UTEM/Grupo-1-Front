@@ -1,39 +1,80 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../adapters/hooks/useAuth.jsx';
+import AdminItemsSection from '../components/admin/AdminItemsSection.jsx';
+import AdminUsersSection from '../components/admin/AdminUsersSection.jsx';
+import AdminStatsSection from '../components/admin/AdminStatsSection.jsx';
+import '../styles/adminDashboard.css';
 
-// Esqueleto del dashboard de Admin. Ruta separada (/admin/dashboard),
-// sin link visible desde la tienda principal.
-// TODO: conectar cada seccion contra el BFF (/v1/admin/reports/*) una vez
-// que exista un login de admin real con rol "admin" (ver gap documentado
-// en scratch/analisis-interacciones-por-funcionalidad). Por ahora son
-// placeholders sin datos, solo para tener la estructura de la pagina.
-const REPORT_SECTIONS = [
-  { title: 'Resumen de ventas', endpoint: '/v1/admin/reports/sales' },
-  { title: 'Pedidos por estado', endpoint: '/v1/admin/reports/orders-by-status' },
-  { title: 'Productos más vendidos', endpoint: '/v1/admin/reports/top-products' },
-  { title: 'Ticket promedio', endpoint: '/v1/admin/reports/average-ticket' },
-  { title: 'Horas de mayor demanda', endpoint: '/v1/admin/reports/peak-hours' },
-  { title: 'Rendimiento de despacho', endpoint: '/v1/admin/reports/delivery-performance' }
+const TABS = [
+  { id: 'items', label: 'Items' },
+  { id: 'users', label: 'Usuarios' },
+  { id: 'stats', label: 'Estadísticas' },
 ];
 
+// Panel de administracion: Items (CRUD productos, G3+G4), Usuarios (G2) y
+// Estadisticas (reportes G7). La ruta ya viene protegida por RequireAdmin;
+// aca solo queda manejar la expiracion del token en caliente: cualquier
+// 401 de una llamada admin cierra la sesion y vuelve al login con aviso
+// (G2 no ofrece refresh confiable, asi que no se intenta renovar).
 export default function AdminDashboard() {
-  return (
-    <div className="page" style={{ padding: '24px' }}>
-      <h1>Panel de Administración</h1>
-      <p style={{ color: 'var(--color-text-secondary)' }}>
-        Esqueleto — pendiente de conectar a los datos reales.
-      </p>
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const [tab, setTab] = useState('items');
 
-      <div className="product-grid" style={{ marginTop: '24px' }}>
-        {REPORT_SECTIONS.map((section) => (
-          <div key={section.endpoint} className="product-card">
-            <h3>{section.title}</h3>
-            <p style={{ color: 'var(--color-text-secondary)', fontSize: '12px' }}>
-              {section.endpoint}
-            </p>
-            <p>Sin datos todavía.</p>
-          </div>
+  const handleAuthError = useCallback(
+    (err) => {
+      if (err?.status === 401) {
+        // El aviso viaja por sessionStorage y no por navigation state: al
+        // hacer logout(), RequireAdmin tambien dispara su propio <Navigate>
+        // sin state y pisa el nuestro (carrera perdida de forma aleatoria).
+        try {
+          sessionStorage.setItem('adminSessionExpired', '1');
+        } catch { /* sin storage el aviso simplemente no se muestra */ }
+        logout();
+        navigate('/admin/login');
+        return true;
+      }
+      return false;
+    },
+    [logout, navigate]
+  );
+
+  const handleLogout = () => {
+    logout();
+    navigate('/admin/login');
+  };
+
+  return (
+    <div className="admin-page">
+      <header className="admin-header">
+        <h1>Panel de Administración</h1>
+        <div className="admin-header-user">
+          <Link to="/tienda" style={{ color: 'var(--color-text-secondary)' }}>
+            Ver tienda
+          </Link>
+          <span>{user?.name}</span>
+          <button className="btn btn-sm" onClick={handleLogout}>
+            Cerrar sesión
+          </button>
+        </div>
+      </header>
+
+      <nav className="admin-tabs">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            className={`admin-tab ${tab === t.id ? 'active' : ''}`}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+          </button>
         ))}
-      </div>
+      </nav>
+
+      {tab === 'items' && <AdminItemsSection onAuthError={handleAuthError} />}
+      {tab === 'users' && <AdminUsersSection onAuthError={handleAuthError} />}
+      {tab === 'stats' && <AdminStatsSection onAuthError={handleAuthError} />}
     </div>
   );
 }
