@@ -134,6 +134,29 @@ export async function completeCart(cartId, idempotencyKey) {
   });
 }
 
+// ── Pedidos (BFF -> Grupo 5). Requieren sesion: el BFF saca el userId del JWT. ──
+// Historial "Mis pedidos" del usuario logueado (paginado).
+export async function fetchOrders({ page = 1, pageSize = 20 } = {}) {
+  const params = new URLSearchParams({ page, pageSize });
+  return bffFetch(`/v1/orders?${params}`, { auth: true });
+}
+
+// Detalle de un pedido propio.
+export async function fetchOrderById(orderId) {
+  return bffFetch(`/v1/orders/${orderId}`, { auth: true });
+}
+
+// Crea el pedido en G5 (bridge MVP mientras G4 arregla su checkout y apunta a G5).
+// El userId lo pone el BFF desde el JWT; aca solo van items + direccion.
+export async function createOrder(payload, idempotencyKey) {
+  return bffFetch('/v1/orders', {
+    method: 'POST',
+    auth: true,
+    body: payload,
+    headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
+  });
+}
+
 // ── Catalogo publico extra ──
 export async function fetchCategories() {
   return bffFetch('/v1/categories');

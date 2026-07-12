@@ -29,12 +29,12 @@ export default function StorePage() {
     cartCount,
     cartTotal,
     orders,
+    ordersError,
     orderSuccessToken,
     addToCart,
     changeQty,
     removeItem,
     clearCart,
-    placeOrder,
     clearOrders
   } = useCart();
 
@@ -123,7 +123,7 @@ export default function StorePage() {
             onGoToCatalog={() => handleGoToCatalogFromLanding('all')}
           />
         )}
-        {activeTab === 'orders' && <Orders orders={orders} error={false} />}
+        {activeTab === 'orders' && <Orders orders={orders} error={ordersError} />}
       </main>
       <Footer />
     </div>
