@@ -108,8 +108,30 @@ export async function removeCartItem(cartId, itemId) {
   return bffFetch(`/v1/cart/${cartId}/items/${itemId}`, { method: 'DELETE', auth: true });
 }
 
-export async function checkout(cartId) {
-  return bffFetch('/v1/checkout', { method: 'POST', auth: true, body: { cartId } });
+// ── Flujo de compra en dos pasos (contrato G4, aclarado 2026-07-11) ──
+// Reserva: al ENTRAR a "Datos de despacho". G4 retiene el stock (ACTIVE -> PENDING).
+export async function reserveCart(cartId, idempotencyKey) {
+  return bffFetch(`/v1/cart/${cartId}/checkout`, {
+    method: 'POST',
+    auth: true,
+    headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
+  });
+}
+
+// Salvavidas: al volver de despacho o cancelar el pago. Libera la reserva
+// (PENDING -> ACTIVE) para no retener stock de una compra que no se concretó.
+export async function activateCart(cartId) {
+  return bffFetch(`/v1/cart/${cartId}/activate`, { method: 'PATCH', auth: true });
+}
+
+// Cierre: tras el pago exitoso. G4 confirma la venta y genera el pedido; en la
+// respuesta viene el orderId. Reemplaza al viejo POST /v1/checkout.
+export async function completeCart(cartId, idempotencyKey) {
+  return bffFetch(`/v1/cart/${cartId}/complete`, {
+    method: 'PATCH',
+    auth: true,
+    headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
+  });
 }
 
 // ── Catalogo publico extra ──

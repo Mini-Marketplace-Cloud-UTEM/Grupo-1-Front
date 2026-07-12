@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../adapters/hooks/useCart.jsx';
 import { useAuth } from '../adapters/hooks/useAuth.jsx';
@@ -73,10 +73,15 @@ function formatearRut(value) {
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { cartState, cartCount, cartTotal, placeOrder, clearCart } = useCart();
+  const { cartState, cartCount, cartTotal, placeOrder, clearCart, reserveCart, activateCart } = useCart();
 
   // Pasos: 'address' -> 'shipping' -> 'payment' -> 'confirm' -> 'success'
   const [step, setStep] = useState('address');
+
+  // Reserva del carrito en G4 (retiene stock mientras dura el checkout).
+  const didReserveRef = useRef(false); // reservar una sola vez por visita
+  const completedRef = useRef(false);  // si ya se completo, NO liberar al salir
+  const [reserveError, setReserveError] = useState(null);
   
   // Datos del paso 1: Dirección y RUT
   const [formData, setFormData] = useState({
@@ -115,6 +120,29 @@ export default function CheckoutPage() {
       navigate('/tienda');
     }
   }, [cartCount, step, navigate]);
+
+  // Al ENTRAR a datos de despacho reservamos el carrito en G4 (ACTIVE ->
+  // PENDING) para retener el stock durante el checkout. Se dispara cuando el
+  // carrito ya cargó (cartCount > 0), una sola vez por visita — el ref evita
+  // que el doble montaje de StrictMode o un re-render reserven dos veces.
+  useEffect(() => {
+    if (cartCount === 0) return;
+    if (didReserveRef.current) return;
+    didReserveRef.current = true;
+    // No bloqueamos el flujo si falla: el carrito podría estar ya PENDING de un
+    // intento anterior. Mostramos el aviso y dejamos continuar. (Afinar el
+    // manejo cuando G4 confirme los códigos de error de stock/estado.)
+    reserveCart().catch((err) => setReserveError(err.message));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartCount]);
+
+  // Salir del checkout ANTES de completar = abandono: liberamos la reserva en
+  // G4 (PENDING -> ACTIVE) para no retener stock, y volvemos a la tienda. Es
+  // best-effort; para el cierre de pestaña / back del navegador G4 tiene un TTL.
+  const exitCheckout = () => {
+    if (didReserveRef.current && !completedRef.current) activateCart();
+    navigate('/tienda');
+  };
 
   // Manejar cambios en el formulario del Paso 1
   const handleInputChange = (e) => {
@@ -209,9 +237,11 @@ export default function CheckoutPage() {
   const handleConfirmOrder = async () => {
     setCheckoutLoading(true);
     try {
-      // placeOrder llama a /v1/checkout del BFF (que a su vez llama a G4)
+      // placeOrder cierra la venta vía PATCH /v1/cart/{id}/complete del BFF
+      // (que a su vez confirma en G4 y genera el pedido).
       const result = await placeOrder(formData, selectedMethod.cost);
       if (result && result.success) {
+        completedRef.current = true; // venta cerrada: no liberar la reserva al salir
         setCheckoutResult(result);
         setStep('success');
       } else {
@@ -231,7 +261,7 @@ export default function CheckoutPage() {
     <div className="app">
       {/* Header simple para el Checkout */}
       <header className="nav" style={{ padding: '0 40px', height: '60px' }}>
-        <div className="nav-logo" onClick={() => navigate('/tienda')} style={{ cursor: 'pointer' }}>
+        <div className="nav-logo" onClick={exitCheckout} style={{ cursor: 'pointer' }}>
           <i className="ti ti-shopping-cart-check" style={{ fontSize: '20px' }}></i>
           <span style={{ fontWeight: 600, letterSpacing: '0.5px' }}>MARKETPLACE CLOUD</span>
         </div>
@@ -399,8 +429,18 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
+                {reserveError && (
+                  <div style={{ padding: '10px 12px', background: 'rgba(217, 119, 6, 0.1)', border: '0.5px solid rgba(217, 119, 6, 0.3)', borderRadius: 'var(--border-radius-md)', fontSize: '12px', color: '#fbbf24', display: 'flex', alignItems: 'flex-start', gap: '8px', lineHeight: 1.5 }}>
+                    <i className="ti ti-alert-triangle" style={{ marginTop: '2px' }}></i>
+                    <span>No se pudo reservar el stock del carrito ({reserveError}). Puedes continuar, pero la disponibilidad se confirmará al finalizar.</span>
+                  </div>
+                )}
+
                 <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px', fontSize: '14px', marginTop: '10px' }}>
                   Continuar al despacho <i className="ti ti-arrow-right" style={{ marginLeft: '4px' }}></i>
+                </button>
+                <button type="button" className="btn" onClick={exitCheckout} style={{ width: '100%', padding: '10px', fontSize: '13px' }}>
+                  Cancelar y volver a la tienda
                 </button>
               </div>
             </form>
@@ -579,6 +619,11 @@ export default function CheckoutPage() {
                   )}
                 </button>
               </div>
+
+              {/* Cancelar el pago libera la reserva del carrito en G4. */}
+              <button type="button" onClick={exitCheckout} disabled={paymentLoading} style={{ display: 'block', margin: '14px auto 0', background: 'none', border: 'none', color: 'var(--color-text-secondary)', fontSize: '12px', textDecoration: 'underline', cursor: 'pointer' }}>
+                Cancelar pago y volver a la tienda
+              </button>
             </form>
           )}
 

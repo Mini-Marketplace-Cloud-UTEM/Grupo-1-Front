@@ -5,8 +5,17 @@ import {
   addCartItem,
   updateCartItem,
   removeCartItem,
-  checkout,
+  reserveCart as apiReserveCart,
+  activateCart as apiActivateCart,
+  completeCart as apiCompleteCart,
 } from '../../api.js';
+import { useAuth } from './useAuth.jsx';
+
+// Genera una clave estable para el intento de compra. En contexto seguro
+// (https / localhost) usa randomUUID; si no, un fallback suficiente para el uso.
+function newIdemKey() {
+  return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
 
 // Context (misma razon que useAuth): StorePage (/tienda) y ProductPage
 // (/productos/:id) son rutas hermanas y necesitan ver el MISMO carro.
@@ -67,6 +76,9 @@ function toCartState(cartData) {
 }
 
 export function CartProvider({ children }) {
+  // El token lo expone AuthProvider, que envuelve a este provider. Lo usamos
+  // para re-asociar el carro de invitado al usuario cuando inicia sesion.
+  const { token } = useAuth();
   const [cartData, setCartData] = useState(null);
   const [cartError, setCartError] = useState('');
   const [orders, setOrders] = useState(DEMO_ORDERS);
@@ -75,6 +87,9 @@ export function CartProvider({ children }) {
   // productos antes de que el estado de React se actualice. Arranca con el id
   // persistido (si lo hay) para recuperar el carro tras un refresco.
   const cartIdRef = useRef(localStorage.getItem(CART_ID_KEY) || null);
+  // Idempotency-Key del intento de compra en curso: se fija al reservar y se
+  // reutiliza al completar, para que un reintento no genere un pedido duplicado.
+  const checkoutKeyRef = useRef(null);
 
   const cartState = toCartState(cartData);
 
@@ -98,6 +113,24 @@ export function CartProvider({ children }) {
     })();
     return () => { cancelled = true; };
   }, []);
+
+  // Re-asociacion del carro de invitado (contrato G4, aclarado 2026-07-11):
+  // G4 vincula el carro al usuario "al vuelo" apenas recibe UNA llamada
+  // autenticada con ese mismo cartId (saca el userId del JWT, nunca del body).
+  // El fetch de arriba ya lleva el token si la sesion venia persistida; este
+  // efecto cubre el caso "el usuario inicia sesion DURANTE la visita con un
+  // carro de invitado ya armado": al aparecer el token, re-tocamos el carro
+  // para gatillar el bind. Saltamos el primer render para no duplicar el fetch.
+  const authBindReady = useRef(false);
+  useEffect(() => {
+    if (!authBindReady.current) { authBindReady.current = true; return; }
+    if (!token || !cartIdRef.current) return;
+    let cancelled = false;
+    getCart(cartIdRef.current)
+      .then((data) => { if (!cancelled) setCartData(data); })
+      .catch(() => { /* si el carro ya no existe, el flujo normal lo maneja */ });
+    return () => { cancelled = true; };
+  }, [token]);
 
   const ensureCart = async () => {
     if (cartIdRef.current) return cartIdRef.current;
@@ -154,16 +187,44 @@ export function CartProvider({ children }) {
   // cerrar sesion y tras generar el pedido). El carro en G4 queda huerfano.
   const clearCart = () => {
     cartIdRef.current = null;
+    checkoutKeyRef.current = null;
     localStorage.removeItem(CART_ID_KEY);
     setCartData(null);
     setCartError('');
   };
 
+  // Reserva el carrito al ENTRAR a datos de despacho: G4 retiene el stock y
+  // pasa ACTIVE -> PENDING. Fijamos la Idempotency-Key del intento de compra.
+  const reserveCart = async () => {
+    if (!cartIdRef.current) return null;
+    checkoutKeyRef.current = newIdemKey();
+    const data = await apiReserveCart(cartIdRef.current, checkoutKeyRef.current);
+    if (data && (data.id || data.items)) setCartData(data);
+    return data;
+  };
+
+  // Libera la reserva (PENDING -> ACTIVE) si el usuario abandona el checkout.
+  // Best-effort: si falla no rompemos la UI (G4 ademas expira por TTL).
+  const activateCart = async () => {
+    if (!cartIdRef.current) return null;
+    try {
+      const data = await apiActivateCart(cartIdRef.current);
+      if (data && (data.id || data.items)) setCartData(data);
+      return data;
+    } catch {
+      return null;
+    }
+  };
+
   const placeOrder = async (shippingDetails = null, shippingCost = 0) => {
     if (!cartIdRef.current || (cartData?.totalItems || 0) === 0) return null;
     try {
-      const result = await checkout(cartIdRef.current);
-      const orderId = result?.orderId || result?.checkoutId || result?.id || `ORD-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(100 + Math.random() * 900)}`;
+      // Cierre de la venta tras el pago: G4 confirma y genera el pedido (G5).
+      // Reutilizamos la misma Idempotency-Key de la reserva; si por algun motivo
+      // no hubo reserva previa, generamos una para no perder idempotencia.
+      const idemKey = checkoutKeyRef.current || newIdemKey();
+      const result = await apiCompleteCart(cartIdRef.current, idemKey);
+      const orderId = result?.orderId || result?.order?.orderId || result?.checkoutId || result?.id || `ORD-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(100 + Math.random() * 900)}`;
       
       // Crear pedido para el historial local
       const newOrder = {
@@ -209,6 +270,8 @@ export function CartProvider({ children }) {
     changeQty,
     removeItem,
     clearCart,
+    reserveCart,
+    activateCart,
     placeOrder,
     clearOrders
   };
