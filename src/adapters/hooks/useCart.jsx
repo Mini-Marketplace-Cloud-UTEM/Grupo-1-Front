@@ -7,7 +7,8 @@ import {
   removeCartItem,
   reserveCart as apiReserveCart,
   activateCart as apiActivateCart,
-  completeCart as apiCompleteCart,
+  fetchOrders as apiFetchOrders,
+  createOrder as apiCreateOrder,
 } from '../../api.js';
 import { useAuth } from './useAuth.jsx';
 
@@ -28,37 +29,31 @@ const CartContext = createContext(null);
 // no asocia el carro al usuario, asi que la referencia la mantenemos aca).
 const CART_ID_KEY = 'cartId';
 
-// Pedidos de demostracion del mockup - el flujo real de pedidos (G5) todavia
-// no se cablea aca, se mantienen como estaban.
-const DEMO_ORDERS = [
-  {
-    id: 'ORD-A4F2B1',
-    date: '10/06/2026',
-    status: 'delivered',
-    items: [
-      { name: 'Monitor 27"', qty: 1, price: 319990 },
-      { name: 'Mouse inalámbrico', qty: 2, price: 24990 }
-    ],
-    total: 369970
-  },
-  {
-    id: 'ORD-C9D3E8',
-    date: '12/06/2026',
-    status: 'shipped',
-    items: [{ name: 'Notebook Pro 14"', qty: 1, price: 699990 }],
-    total: 699990
-  },
-  {
-    id: 'ORD-F1A0B3',
-    date: '14/06/2026',
-    status: 'processing',
-    items: [
-      { name: 'Silla ergonómica', qty: 1, price: 189990 },
-      { name: 'Lámpara LED', qty: 2, price: 19990 }
-    ],
-    total: 229970
-  }
-];
+// Pedidos reales: vienen del BFF (-> Grupo 5). El componente Orders espera el
+// status en minuscula (pending/processing/shipped/delivered/cancelled); G5 usa
+// UPPER_SNAKE. Este mapa traduce el ciclo de vida de G5 a los 4 pasos de la UI.
+const G5_STATUS_UI = {
+  CREATED: 'pending',
+  PAYMENT_PENDING: 'pending',
+  PAID: 'processing',
+  STOCK_RESERVED: 'processing',
+  READY_TO_SHIP: 'processing',
+  SHIPPED: 'shipped',
+  DELIVERED: 'delivered',
+  CANCELLED: 'cancelled',
+  FAILED: 'cancelled',
+};
+
+// Del Order de G5 (camelCase) a la forma que consume el componente Orders.
+function mapG5Order(o) {
+  return {
+    id: o.orderId,
+    status: G5_STATUS_UI[o.status] || 'pending',
+    date: o.createdAt ? new Date(o.createdAt).toLocaleDateString('es-CL') : '',
+    items: (o.items || []).map((it) => ({ name: it.name, qty: it.quantity, price: it.unitPrice })),
+    total: o.totalAmount ?? 0,
+  };
+}
 
 // Del carro normalizado del BFF (items: [{itemId, productId, name, unitPrice,
 // quantity, subtotal}]) al mapa keyed por productId que consumen Catalog,
@@ -81,7 +76,8 @@ export function CartProvider({ children }) {
   const { token } = useAuth();
   const [cartData, setCartData] = useState(null);
   const [cartError, setCartError] = useState('');
-  const [orders, setOrders] = useState(DEMO_ORDERS);
+  const [orders, setOrders] = useState([]);
+  const [ordersError, setOrdersError] = useState(false);
   const [orderSuccessToken, setOrderSuccessToken] = useState('');
   // Id sincrono para no crear dos carritos si el usuario agrega rapido dos
   // productos antes de que el estado de React se actualice. Arranca con el id
@@ -130,6 +126,27 @@ export function CartProvider({ children }) {
       .then((data) => { if (!cancelled) setCartData(data); })
       .catch(() => { /* si el carro ya no existe, el flujo normal lo maneja */ });
     return () => { cancelled = true; };
+  }, [token]);
+
+  // "Mis pedidos" reales (BFF -> G5). Se cargan cuando hay sesion y se vacian al
+  // cerrar sesion. G5 devuelve {data, pagination}; mapeamos a la forma de la UI.
+  const loadOrders = async () => {
+    try {
+      const res = await apiFetchOrders();
+      setOrders((res?.data || []).map(mapG5Order));
+      setOrdersError(false);
+    } catch {
+      setOrdersError(true);
+    }
+  };
+
+  useEffect(() => {
+    if (!token) {
+      setOrders([]);
+      setOrdersError(false);
+      return;
+    }
+    loadOrders();
   }, [token]);
 
   const ensureCart = async () => {
@@ -216,42 +233,48 @@ export function CartProvider({ children }) {
     }
   };
 
-  const placeOrder = async (shippingDetails = null, shippingCost = 0) => {
+  const placeOrder = async (shippingDetails = null) => {
     if (!cartIdRef.current || (cartData?.totalItems || 0) === 0) return null;
     try {
-      // Cierre de la venta tras el pago: G4 confirma y genera el pedido (G5).
-      // Reutilizamos la misma Idempotency-Key de la reserva; si por algun motivo
-      // no hubo reserva previa, generamos una para no perder idempotencia.
+      // Bridge MVP: creamos el pedido directo en G5 (via BFF) con los items del
+      // carro. Reutilizamos la Idempotency-Key de la reserva para no duplicar; si
+      // no hubo reserva previa, generamos una. (El costo de envio lo fija G5 hoy.)
       const idemKey = checkoutKeyRef.current || newIdemKey();
-      const result = await apiCompleteCart(cartIdRef.current, idemKey);
-      const orderId = result?.orderId || result?.order?.orderId || result?.checkoutId || result?.id || `ORD-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(100 + Math.random() * 900)}`;
-      
-      // Crear pedido para el historial local
-      const newOrder = {
-        id: orderId,
-        date: new Date().toLocaleDateString('es-CL'),
-        status: 'pending',
-        items: Object.values(toCartState(cartData)).map(x => ({
-          name: x.product.name,
-          qty: x.qty,
-          price: x.product.price
-        })),
-        total: (cartData?.totalPrice || 0) + shippingCost,
-        shippingAddress: shippingDetails ? `${shippingDetails.address}, ${shippingDetails.city}` : 'No especificada',
-        shippingCost: shippingCost
-      };
+      const items = Object.values(toCartState(cartData)).map((x) => ({
+        productId: x.product.id,
+        name: x.product.name,
+        quantity: x.qty,
+        unitPrice: x.product.price,
+        subtotal: x.product.price * x.qty,
+      }));
+      const shippingAddress = shippingDetails
+        ? {
+            street: shippingDetails.address || '',
+            city: shippingDetails.city || '',
+            region: shippingDetails.region || 'Región Metropolitana',
+            country: 'Chile',
+          }
+        : null;
 
-      setOrders(prev => [newOrder, ...prev]);
-      setOrderSuccessToken(orderId);
-      
+      const created = await apiCreateOrder({ items, shippingAddress, notes: null }, idemKey);
+      const orderId = created?.orderId;
+
+      // Mostrar el pedido real recien creado al instante y reconciliar en segundo
+      // plano con el historial completo que devuelve G5.
+      if (created) {
+        setOrders((prev) => [mapG5Order(created), ...prev.filter((o) => o.id !== created.orderId)]);
+      }
+      setOrderSuccessToken(orderId || '');
+      loadOrders();
+
       setTimeout(() => {
         clearCart();
         setOrderSuccessToken('');
       }, 5000); // Dar suficiente tiempo para la UI de éxito
-      
-      return { success: true, orderId, order: newOrder };
+
+      return { success: true, orderId, order: created };
     } catch (err) {
-      throw new Error(err.message || 'Error al procesar el checkout');
+      throw new Error(err.message || 'Error al procesar el pedido');
     }
   };
 
@@ -265,6 +288,7 @@ export function CartProvider({ children }) {
     cartTotal: cartData?.totalPrice || 0,
     cartError,
     orders,
+    ordersError,
     orderSuccessToken,
     addToCart,
     changeQty,

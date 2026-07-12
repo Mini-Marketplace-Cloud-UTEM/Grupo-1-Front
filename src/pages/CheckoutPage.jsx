@@ -237,9 +237,12 @@ export default function CheckoutPage() {
   const handleConfirmOrder = async () => {
     setCheckoutLoading(true);
     try {
-      // placeOrder cierra la venta vía PATCH /v1/cart/{id}/complete del BFF
-      // (que a su vez confirma en G4 y genera el pedido).
-      const result = await placeOrder(formData, selectedMethod.cost);
+      // placeOrder crea el pedido en G5 (via BFF) con los items del carro.
+      // Le pasamos el nombre real de la region (formData solo trae el indice).
+      const result = await placeOrder(
+        { ...formData, region: CHILE_REGIONS[formData.regionIndex]?.name },
+        selectedMethod.cost
+      );
       if (result && result.success) {
         completedRef.current = true; // venta cerrada: no liberar la reserva al salir
         setCheckoutResult(result);
