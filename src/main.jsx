@@ -1,9 +1,10 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import App from './App.jsx'
-import ErrorBoundary from './components/ErrorBoundary.jsx'
-import './index.css'
-import './styles/index.css'
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App.jsx';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
+import './index.css';
+import './styles/index.css';
+import './styles/paginasInformativas.css';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -11,4 +12,4 @@ createRoot(document.getElementById('root')).render(
       <App />
     </ErrorBoundary>
   </StrictMode>,
-)
+);

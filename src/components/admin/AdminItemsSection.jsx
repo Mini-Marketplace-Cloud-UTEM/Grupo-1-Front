@@ -156,6 +156,7 @@ export default function AdminItemsSection({ onAuthError }) {
                 <th>Nombre</th>
                 <th>Precio</th>
                 <th>Categoría</th>
+                <th>Tamaño</th>
                 <th>Stock</th>
                 <th>Estado</th>
                 <th>Acciones</th>
@@ -168,6 +169,7 @@ export default function AdminItemsSection({ onAuthError }) {
                     <td>{p.name}</td>
                     <td style={{ fontVariantNumeric: 'tabular-nums' }}>{formatCLP(p.price)}</td>
                     <td>{p.category || '—'}</td>
+                    <td>{p.size || '—'}</td>
                     <td>{p.stock}</td>
                     <td>
                       <span className={`admin-badge ${p.status === 'ACTIVE' ? 'active' : 'inactive'}`}>
@@ -201,7 +203,7 @@ export default function AdminItemsSection({ onAuthError }) {
                   </tr>
                   {inventory[p.id] && (
                     <tr className="admin-inventory-row">
-                      <td colSpan={6}>
+                      <td colSpan={7}>
                         {inventory[p.id].loading
                           ? 'Consultando inventario (G4)…'
                           : inventory[p.id].error
