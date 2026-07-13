@@ -217,6 +217,16 @@ export default function ProductPage() {
               )}
             </div>
 
+            {/* Tamaño del producto (talla de paquete). Viene de G3 vía BFF. */}
+            {product.size && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-zinc-400 font-medium">Tamaño:</span>
+                <span className="text-sm font-bold text-white border border-zinc-700 rounded-md px-2.5 py-0.5">
+                  {product.size}
+                </span>
+              </div>
+            )}
+
             {/* Description */}
             <p className="text-sm text-zinc-400 leading-relaxed">
               {product.description || 'Experimenta el máximo rendimiento y diseño de última generación con este producto en MiniMarketPlace. Diseñado bajo los más altos estándares de calidad para satisfacer todas tus necesidades cotidianas y profesionales.'}

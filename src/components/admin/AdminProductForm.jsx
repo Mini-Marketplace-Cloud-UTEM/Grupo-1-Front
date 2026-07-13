@@ -6,6 +6,10 @@ import {
   fetchProductById,
 } from '../../api.js';
 
+// Tallas/tamaños válidos del producto (enum de G3, requerido al crear).
+// G4 lo usa para armar el paquete y cotizar el despacho con G6.
+const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+
 // Form de crear/editar producto del panel admin.
 // - En edicion la categoria va deshabilitada: el PUT de G3 no acepta
 //   categoryId (la categoria es inmutable tras crear).
@@ -22,6 +26,7 @@ export default function AdminProductForm({ mode, product, onSaved, onCancel, onA
   const [categoryId, setCategoryId] = useState(product?.categoryId || '');
   const [description, setDescription] = useState('');
   const [stockVisible, setStockVisible] = useState(product?.stock ?? 0);
+  const [size, setSize] = useState(product?.size || '');
   const [sku, setSku] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [status, setStatus] = useState(product?.status || 'ACTIVE');
@@ -50,6 +55,7 @@ export default function AdminProductForm({ mode, product, onSaved, onCancel, onA
           if (cancelled) return;
           setDescription(detail.description || '');
           setImageUrl((detail.images || [])[0] || '');
+          if (detail.size) setSize(detail.size);
         })
         .catch(() => {
           // El detalle solo completa campos secundarios; si falla se puede
@@ -74,6 +80,10 @@ export default function AdminProductForm({ mode, product, onSaved, onCancel, onA
       setFormError('Selecciona una categoría.');
       return;
     }
+    if (!size) {
+      setFormError('Selecciona un tamaño.');
+      return;
+    }
 
     setSaving(true);
     try {
@@ -83,6 +93,7 @@ export default function AdminProductForm({ mode, product, onSaved, onCancel, onA
           description: description.trim() || null,
           price: priceInt,
           stockVisible: Number(stockVisible) || 0,
+          size,
           status,
           images: imageUrl.trim() ? [imageUrl.trim()] : [],
         });
@@ -91,6 +102,7 @@ export default function AdminProductForm({ mode, product, onSaved, onCancel, onA
           name: name.trim(),
           price: priceInt,
           categoryId,
+          size,
           stockVisible: Number(stockVisible) || 0,
         };
         if (description.trim()) body.description = description.trim();
@@ -157,6 +169,17 @@ export default function AdminProductForm({ mode, product, onSaved, onCancel, onA
               value={stockVisible}
               onChange={(e) => setStockVisible(e.target.value)}
             />
+          </div>
+          <div className="form-group">
+            <label>Tamaño *</label>
+            <select value={size} onChange={(e) => setSize(e.target.value)} required>
+              <option value="">Selecciona…</option>
+              {SIZES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
           </div>
           {!isEdit && (
             <div className="form-group">
