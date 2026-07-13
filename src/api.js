@@ -134,6 +134,23 @@ export async function completeCart(cartId, idempotencyKey) {
   });
 }
 
+// ── Checkout real orquestado por G4 (v2, 2026-07-12) ──
+// G4 crea el pedido en G5 (con la dirección) e inicia el pago en G8 y devuelve
+// { status: "PENDING", paymentUrl }. El front redirige a paymentUrl (MercadoPago).
+export async function checkoutCart(cartId, { shippingAddress, notes } = {}, idempotencyKey) {
+  return bffFetch(`/v1/cart/${cartId}/checkout`, {
+    method: 'POST',
+    auth: true,
+    body: { shippingAddress, notes: notes ?? null },
+    headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
+  });
+}
+
+// Cancela el checkout y libera el stock en G4 (botones "Cancelar" de despacho/pago).
+export async function cancelCheckout(cartId) {
+  return bffFetch(`/v1/cart/${cartId}/cancel_checkout`, { method: 'PATCH', auth: true });
+}
+
 // ── Pedidos (BFF -> Grupo 5). Requieren sesion: el BFF saca el userId del JWT. ──
 // Historial "Mis pedidos" del usuario logueado (paginado).
 export async function fetchOrders({ page = 1, pageSize = 20 } = {}) {
