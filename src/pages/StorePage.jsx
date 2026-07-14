@@ -58,6 +58,7 @@ export default function StorePage() {
 
   const handleGoToCatalogFromLanding = (category) => {
     setCatalogCategory(category);
+    setPage(1);
     setActiveTab('catalog');
   };
 

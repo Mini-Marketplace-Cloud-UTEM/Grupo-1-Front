@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getProductCatalogUseCase } from '../../config/di.js';
 
-export function useCatalog(search, page) {
+export function useCatalog(search, page, category) {
   const [products, setProducts] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -15,7 +15,7 @@ export function useCatalog(search, page) {
     setError(null);
 
     getProductCatalogUseCase
-      .execute({ q: search, page, pageSize: 6 })
+      .execute({ q: search, category, page, pageSize: 6 })
       .then((result) => {
         if (cancelled) return;
         setProducts(result.products);
@@ -32,7 +32,7 @@ export function useCatalog(search, page) {
     return () => {
       cancelled = true;
     };
-  }, [search, page, reloadKey]);
+  }, [search, page, category, reloadKey]);
 
   const retry = () => setReloadKey((k) => k + 1);
 

@@ -5,8 +5,8 @@ export class GetProductCatalog {
     this.productRepository = productRepository;
   }
 
-  async execute({ q, page, pageSize }) {
-    const result = await this.productRepository.getProducts({ q, page, pageSize });
+  async execute({ q, category, page, pageSize }) {
+    const result = await this.productRepository.getProducts({ q, category, page, pageSize });
     return {
       products: result.products.map((p) => new Product(p)),
       pagination: result.pagination
