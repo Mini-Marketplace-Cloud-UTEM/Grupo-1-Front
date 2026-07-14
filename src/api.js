@@ -69,9 +69,12 @@ export async function bffFetch(
   return res.json();
 }
 
-export async function fetchProducts({ q = '', page = 1, pageSize = 6 } = {}) {
+export async function fetchProducts({ q = '', category, page = 1, pageSize = 6 } = {}) {
   const params = new URLSearchParams({ page, pageSize });
   if (q) params.set('q', q);
+  // El filtro de categoria lo aplica G3 (via BFF): mandamos la categoria en la
+  // request, no filtramos el bloque ya paginado en el navegador. 'all' = sin filtro.
+  if (category && category !== 'all') params.set('category', category);
   return bffFetch(`/v1/products?${params}`);
 }
 

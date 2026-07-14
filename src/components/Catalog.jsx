@@ -8,18 +8,18 @@ export default function Catalog({ search, cart, onAddToCart, page, onPageChange,
   const [onlyInStock, setOnlyInStock] = useState(false);
   const [maxPrice, setMaxPrice] = useState(1000000);
 
-  const { products, pagination, loading, error, retry } = useCatalog(search, page);
+  const { products, pagination, loading, error, retry } = useCatalog(search, page, selectedCategory);
   const { isFavorite, toggleFavorite } = useFavorites();
 
   const fmt = (n) => '$' + n.toLocaleString('es-CL');
 
-  // Filtrado local interactivo para potenciar el Mockup
+  // La categoría la filtra G3 (vía BFF): `products` ya llega filtrado y paginado
+  // por categoría. Aquí solo aplicamos los filtros que G3 no soporta
+  // (precio/stock), sobre la página actual.
   const filteredProducts = products.filter((p) => {
-    const matchesCategory =
-      selectedCategory === 'all' || p.category.toLowerCase() === selectedCategory.toLowerCase();
     const matchesStock = !onlyInStock || p.inStock;
     const matchesPrice = p.price <= maxPrice;
-    return matchesCategory && matchesStock && matchesPrice;
+    return matchesStock && matchesPrice;
   });
 
   if (loading) {
@@ -72,7 +72,7 @@ export default function Catalog({ search, cart, onAddToCart, page, onPageChange,
               <li
                 key={cat.id}
                 className={selectedCategory === cat.id ? 'active' : ''}
-                onClick={() => setSelectedCategory(cat.id)}
+                onClick={() => { setSelectedCategory(cat.id); onPageChange(1); }}
               >
                 <i className={`ti ${cat.icon}`} aria-hidden="true"></i>
                 <span>{cat.name}</span>
