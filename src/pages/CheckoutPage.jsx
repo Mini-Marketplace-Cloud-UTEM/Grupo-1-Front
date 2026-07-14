@@ -94,6 +94,9 @@ export default function CheckoutPage() {
     if (!formData.address.trim()) errors.address = 'Dirección requerida';
     if (!formData.rut) errors.rut = 'RUT requerido';
     else if (!validarRut(formData.rut)) errors.rut = 'RUT inválido (ej: 12345678-K)';
+    // G4 EXIGE el código postal para cotizar el despacho (si falta, su checkout
+    // responde 422). Lo pedimos obligatorio para no fallar el pago.
+    if (!formData.postalCode.trim()) errors.postalCode = 'Código postal requerido';
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
       return;
@@ -232,8 +235,9 @@ export default function CheckoutPage() {
 
                 <div style={{ display: 'flex', gap: '16px' }}>
                   <div style={{ flex: 1 }}>
-                    <label htmlFor="postalCode" style={labelStyle}>Código Postal (opcional)</label>
-                    <input id="postalCode" type="text" name="postalCode" value={formData.postalCode} onChange={handleInputChange} style={inputStyle(false)} placeholder="8320000" />
+                    <label htmlFor="postalCode" style={labelStyle}>Código Postal *</label>
+                    <input id="postalCode" type="text" name="postalCode" value={formData.postalCode} onChange={handleInputChange} style={inputStyle(formErrors.postalCode)} placeholder="8320000" />
+                    {formErrors.postalCode && <span style={errStyle}>{formErrors.postalCode}</span>}
                   </div>
                   <div style={{ flex: 1 }}>
                     <label htmlFor="notes" style={labelStyle}>Notas de entrega (opcional)</label>
