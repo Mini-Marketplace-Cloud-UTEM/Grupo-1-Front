@@ -108,32 +108,6 @@ export async function removeCartItem(cartId, itemId) {
   return bffFetch(`/v1/cart/${cartId}/items/${itemId}`, { method: 'DELETE', auth: true });
 }
 
-// ── Flujo de compra en dos pasos (contrato G4, aclarado 2026-07-11) ──
-// Reserva: al ENTRAR a "Datos de despacho". G4 retiene el stock (ACTIVE -> PENDING).
-export async function reserveCart(cartId, idempotencyKey) {
-  return bffFetch(`/v1/cart/${cartId}/checkout`, {
-    method: 'POST',
-    auth: true,
-    headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
-  });
-}
-
-// Salvavidas: al volver de despacho o cancelar el pago. Libera la reserva
-// (PENDING -> ACTIVE) para no retener stock de una compra que no se concretó.
-export async function activateCart(cartId) {
-  return bffFetch(`/v1/cart/${cartId}/activate`, { method: 'PATCH', auth: true });
-}
-
-// Cierre: tras el pago exitoso. G4 confirma la venta y genera el pedido; en la
-// respuesta viene el orderId. Reemplaza al viejo POST /v1/checkout.
-export async function completeCart(cartId, idempotencyKey) {
-  return bffFetch(`/v1/cart/${cartId}/complete`, {
-    method: 'PATCH',
-    auth: true,
-    headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
-  });
-}
-
 // ── Checkout real orquestado por G4 (v2, 2026-07-12) ──
 // G4 crea el pedido en G5 (con la dirección) e inicia el pago en G8 y devuelve
 // { status: "PENDING", paymentUrl }. El front redirige a paymentUrl (MercadoPago).
@@ -161,17 +135,6 @@ export async function fetchOrders({ page = 1, pageSize = 20 } = {}) {
 // Detalle de un pedido propio.
 export async function fetchOrderById(orderId) {
   return bffFetch(`/v1/orders/${orderId}`, { auth: true });
-}
-
-// Crea el pedido en G5 (bridge MVP mientras G4 arregla su checkout y apunta a G5).
-// El userId lo pone el BFF desde el JWT; aca solo van items + direccion.
-export async function createOrder(payload, idempotencyKey) {
-  return bffFetch('/v1/orders', {
-    method: 'POST',
-    auth: true,
-    body: payload,
-    headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
-  });
 }
 
 // ── Catalogo publico extra ──

@@ -5,10 +5,9 @@ import {
   addCartItem,
   updateCartItem,
   removeCartItem,
-  reserveCart as apiReserveCart,
-  activateCart as apiActivateCart,
+  checkoutCart as apiCheckoutCart,
+  cancelCheckout as apiCancelCheckout,
   fetchOrders as apiFetchOrders,
-  createOrder as apiCreateOrder,
 } from '../../api.js';
 import { useAuth } from './useAuth.jsx';
 
@@ -210,72 +209,48 @@ export function CartProvider({ children }) {
     setCartError('');
   };
 
-  // Reserva el carrito al ENTRAR a datos de despacho: G4 retiene el stock y
-  // pasa ACTIVE -> PENDING. Fijamos la Idempotency-Key del intento de compra.
-  const reserveCart = async () => {
-    if (!cartIdRef.current) return null;
-    checkoutKeyRef.current = newIdemKey();
-    const data = await apiReserveCart(cartIdRef.current, checkoutKeyRef.current);
-    if (data && (data.id || data.items)) setCartData(data);
-    return data;
-  };
-
-  // Libera la reserva (PENDING -> ACTIVE) si el usuario abandona el checkout.
-  // Best-effort: si falla no rompemos la UI (G4 ademas expira por TTL).
-  const activateCart = async () => {
-    if (!cartIdRef.current) return null;
+  // Cancela el checkout en G4 para liberar el stock reservado (botón "Cancelar"
+  // de las pantallas de despacho/pago). Best-effort: G4 igual libera por TTL.
+  const cancelCheckoutFlow = async () => {
+    if (!cartIdRef.current) return;
     try {
-      const data = await apiActivateCart(cartIdRef.current);
-      if (data && (data.id || data.items)) setCartData(data);
-      return data;
+      await apiCancelCheckout(cartIdRef.current);
     } catch {
-      return null;
+      /* best-effort */
     }
   };
 
+  // Inicia el checkout real contra el super-endpoint de G4: G4 reserva el stock,
+  // cotiza el despacho, crea el pedido (G5) e inicia el pago (G8). Devuelve
+  // { message, status, orderId, paymentUrl, shippingCost, totalAmount }. El caller
+  // redirige a paymentUrl (MercadoPago). Si no hay stock, G4 responde 409.
   const placeOrder = async (shippingDetails = null) => {
     if (!cartIdRef.current || (cartData?.totalItems || 0) === 0) return null;
-    try {
-      // Bridge MVP: creamos el pedido directo en G5 (via BFF) con los items del
-      // carro. Reutilizamos la Idempotency-Key de la reserva para no duplicar; si
-      // no hubo reserva previa, generamos una. (El costo de envio lo fija G5 hoy.)
-      const idemKey = checkoutKeyRef.current || newIdemKey();
-      const items = Object.values(toCartState(cartData)).map((x) => ({
-        productId: x.product.id,
-        name: x.product.name,
-        quantity: x.qty,
-        unitPrice: x.product.price,
-        subtotal: x.product.price * x.qty,
-      }));
-      const shippingAddress = shippingDetails
-        ? {
-            street: shippingDetails.address || '',
-            city: shippingDetails.city || '',
-            region: shippingDetails.region || 'Región Metropolitana',
-            country: 'Chile',
-          }
-        : null;
+    const idemKey = checkoutKeyRef.current || newIdemKey();
+    checkoutKeyRef.current = idemKey;
+    const shippingAddress = shippingDetails
+      ? {
+          street: shippingDetails.address || '',
+          city: shippingDetails.city || '',
+          region: shippingDetails.region || 'Región Metropolitana',
+          country: 'Chile',
+          postalCode: shippingDetails.postalCode || null,
+        }
+      : null;
 
-      const created = await apiCreateOrder({ items, shippingAddress, notes: null }, idemKey);
-      const orderId = created?.orderId;
+    const result = await apiCheckoutCart(
+      cartIdRef.current,
+      { shippingAddress, notes: shippingDetails?.notes || '' },
+      idemKey,
+    );
 
-      // Mostrar el pedido real recien creado al instante y reconciliar en segundo
-      // plano con el historial completo que devuelve G5.
-      if (created) {
-        setOrders((prev) => [mapG5Order(created), ...prev.filter((o) => o.id !== created.orderId)]);
-      }
-      setOrderSuccessToken(orderId || '');
-      loadOrders();
-
-      setTimeout(() => {
-        clearCart();
-        setOrderSuccessToken('');
-      }, 5000); // Dar suficiente tiempo para la UI de éxito
-
-      return { success: true, orderId, order: created };
-    } catch (err) {
-      throw new Error(err.message || 'Error al procesar el pedido');
+    // Pedido creado (queda PAYMENT_PENDING). Limpiamos el carro local solo si de
+    // verdad vamos a redirigir al pago; el historial se refresca al volver.
+    if (result?.paymentUrl) {
+      setOrderSuccessToken(result.orderId || '');
+      clearCart();
     }
+    return { success: true, ...result };
   };
 
   const clearOrders = () => {
@@ -294,8 +269,7 @@ export function CartProvider({ children }) {
     changeQty,
     removeItem,
     clearCart,
-    reserveCart,
-    activateCart,
+    cancelCheckoutFlow,
     placeOrder,
     clearOrders
   };
