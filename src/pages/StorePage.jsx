@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Tabs from '../components/Tabs';
 import Catalog from '../components/Catalog';
@@ -17,9 +17,12 @@ import { useCart } from '../adapters/hooks/useCart.jsx';
 // para compartir estado con ProductPage.
 export default function StorePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout, isLoggedIn } = useAuth();
 
-  const [activeTab, setActiveTab] = useState('inicio');
+  // Pestaña inicial: por defecto "inicio", pero permitimos que otra ruta pida
+  // una pestaña (p.ej. "Ver mis pedidos" desde /success -> tab 'orders').
+  const [activeTab, setActiveTab] = useState(location.state?.tab || 'inicio');
   const [catalogCategory, setCatalogCategory] = useState('all');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);

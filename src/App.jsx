@@ -16,6 +16,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import NotFound from './pages/NotFound';
 import Register from './pages/Register';
 import CheckoutPage from './pages/CheckoutPage';
+import CheckoutResultPage from './pages/CheckoutResultPage';
 import AyudaPostventa from './pages/AyudaPostventa';
 
 // Páginas informativas
@@ -111,6 +112,12 @@ export default function App() {
                   </RequireAuth>
                 }
               />
+
+              {/* Retorno de MercadoPago (back_urls de G4/G8). Públicas: son
+                  landing de un redirect externo; la sesión se rehidrata sola. */}
+              <Route path="/success" element={<CheckoutResultPage status="success" />} />
+              <Route path="/failure" element={<CheckoutResultPage status="failure" />} />
+              <Route path="/pending" element={<CheckoutResultPage status="pending" />} />
 
               <Route
                 path="/productos/:id"
