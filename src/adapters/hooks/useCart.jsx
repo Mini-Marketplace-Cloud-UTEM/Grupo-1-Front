@@ -247,6 +247,28 @@ export function CartProvider({ children }) {
     // Pedido creado (queda PAYMENT_PENDING). Limpiamos el carro local solo si de
     // verdad vamos a redirigir al pago; el historial se refresca al volver.
     if (result?.paymentUrl) {
+      // Guardar un resumen para las pantallas de retorno de MercadoPago
+      // (/success, /pending), que se cargan como recarga completa tras el pago.
+      try {
+        const items = Object.values(toCartState(cartData)).map((x) => ({
+          name: x.product.name,
+          qty: x.qty,
+          price: x.product.price,
+        }));
+        localStorage.setItem(
+          'lastCheckout',
+          JSON.stringify({
+            orderId: result.orderId || null,
+            totalAmount: result.totalAmount ?? null,
+            shippingCost: result.shippingCost ?? null,
+            currency: 'CLP',
+            items,
+            at: Date.now(),
+          }),
+        );
+      } catch {
+        /* almacenamiento no disponible: la pantalla de retorno mostrará lo genérico */
+      }
       setOrderSuccessToken(result.orderId || '');
       clearCart();
     }
