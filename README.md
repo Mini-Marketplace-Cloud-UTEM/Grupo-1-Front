@@ -14,11 +14,10 @@ vez orquesta los servicios de los grupos 2–8.
 
 > **Estado honesto para evaluación (E3 Cloud):** este proyecto usa **deploy
 > automatizado por plataforma** (auto-deploy nativo de Vercel y Render al hacer
-> push), **no un pipeline de CI/CD propio**. No existe `.github/workflows/` ni
-> ninguna otra automatización de tests/lint previa al despliegue. Lo único que
-> corre automáticamente antes de publicar es el **build de Vite en Vercel**; si
-> el build falla, el deploy no se promueve. Esto es un *build check*, no una
-> suite de CI. Se documenta tal cual es, sin inflar el alcance.
+> push), complementado por un **CI propio en GitHub Actions**
+> (`.github/workflows/ci.yml`) que corre lint (ESLint), build (Vite) y
+> `npm audit` en cada push y PR sobre `main`, `QA` y `Dev`. Aún no hay tests
+> automatizados. Se documenta tal cual es, sin inflar el alcance.
 
 ### 1. Cómo se despliega hoy cada servicio
 
@@ -47,17 +46,17 @@ vez orquesta los servicios de los grupos 2–8.
 
 ### 2. ¿Hay CI (tests / lint automatizados)?
 
-**No.** Estado verificado del repo:
-- No existe `.github/workflows/` ni ningún otro runner de CI.
-- `package.json` solo define `dev`, `build` y `preview`. **No hay script de
-  test ni de lint**, por lo tanto no hay nada que un CI pudiera ejecutar hoy.
-- La única validación previa al deploy es que **`vite build` compile sin
-  errores** en Vercel. Si falla, Vercel marca el deploy como fallido y **mantiene
-  en línea la última versión que sí compiló**.
+**Sí, lint y build.** Estado verificado del repo:
+- `.github/workflows/ci.yml` corre en cada push y PR sobre `main`, `QA` y `Dev`:
+  `npm ci` → `npm run lint` (ESLint) → `npm run build` (Vite) →
+  `npm audit --audit-level=high` (informativo, no bloquea).
+- `package.json` define `dev`, `build`, `preview` y `lint`. **Todavía no hay
+  script de test.**
+- Además, Vercel vuelve a compilar antes de publicar: si `vite build` falla, el
+  deploy se marca como fallido y **queda en línea la última versión sana**.
 
-> Mejora futura (no implementada): agregar un workflow de GitHub Actions que
-> corra lint/build (y tests cuando existan) en cada PR antes de permitir el
-> merge a `main`.
+> Mejora futura: agregar tests (p. ej. Vitest) al CI y exigir que pase antes
+> del merge a `main`.
 
 ### 3. Variables de entorno
 
@@ -102,7 +101,7 @@ npm run preview             # sirve dist/ localmente para verificar
 
 ### 5. Rollback
 
-No hay rollback automatizado (no hay CI que lo gestione). Es **manual vía
+No hay rollback automatizado (el CI no despliega). Es **manual vía
 dashboard**:
 
 - **Vercel (Frontend):** Deployments → elegir un deploy previo que estaba sano →
